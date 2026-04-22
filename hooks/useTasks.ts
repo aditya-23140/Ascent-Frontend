@@ -1,0 +1,276 @@
+import { useState, useEffect, useCallback } from "react";
+import { useAuth } from "@clerk/nextjs";
+import {
+  createAuthenticatedApiClient,
+  API_ENDPOINTS,
+  handleApiError,
+} from "@/lib/api";
+
+/**
+ * Task interface matching MongoDB schema
+ */
+export interface ITask {
+  _id: string;
+  userId: string;
+  title: string;
+  description?: string;
+  dueDate?: string;
+  deadline?: string;
+  priority: "low" | "medium" | "high";
+  status: "pending" | "in_progress" | "completed";
+  subtasks: string[]; // Array of subtask IDs
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Subtask interface
+ */
+export interface ISubtask {
+  _id: string;
+  taskId: string;
+  title: string;
+  duration: number; // in minutes
+  completed: boolean;
+  actualDuration?: number; // in minutes, tracked after completion
+  completedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * Task with populated subtasks
+ */
+export interface ITaskWithSubtasks extends Omit<ITask, "subtasks"> {
+  subtasks: ISubtask[];
+}
+
+/**
+ * Hook for managing tasks with dynamic data fetching
+ */
+export function useTasks() {
+  const { getToken } = useAuth();
+  const [tasks, setTasks] = useState<ITask[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  /**
+   * Fetch all tasks
+   */
+  const fetchTasks = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const token = await getToken();
+      const client = await createAuthenticatedApiClient(token || "");
+      const response = await client.get<{
+        success: boolean;
+        data: { tasks: ITask[] };
+      }>(API_ENDPOINTS.TASKS);
+      setTasks(response.data.data.tasks);
+    } catch (err) {
+      const message = handleApiError(err);
+      setError(message);
+      console.error("Error fetching tasks:", message);
+    } finally {
+      setLoading(false);
+    }
+  }, [getToken]);
+  /**
+   * Create a new task
+   */
+  const createTask = useCallback(
+    async (taskData: Partial<ITask> & { generateSubtasksAI?: boolean }) => {
+      try {
+        setError(null);
+        const token = await getToken();
+        const client = await createAuthenticatedApiClient(token || "");
+        const response = await client.post<{
+          success: boolean;
+          data: { task: ITask };
+        }>(API_ENDPOINTS.CREATE_TASK, taskData);
+        setTasks((prev) => [...prev, response.data.data.task]);
+        return response.data.data.task;
+      } catch (err) {
+        const message = handleApiError(err);
+        setError(message);
+        throw err;
+      }
+    },
+    [getToken]
+  );
+  /**
+   * Update a task
+   */
+  const updateTask = useCallback(
+    async (taskId: string, taskData: Partial<ITask>) => {
+      try {
+        setError(null);
+        const token = await getToken();
+        const client = await createAuthenticatedApiClient(token || "");
+        const response = await client.put<{
+          success: boolean;
+          data: ITask;
+        }>(API_ENDPOINTS.UPDATE_TASK(taskId), taskData);
+        setTasks((prev) =>
+          prev.map((t) => (t._id === taskId ? response.data.data : t))
+        );
+        return response.data.data;
+      } catch (err) {
+        const message = handleApiError(err);
+        setError(message);
+        throw err;
+      }
+    },
+    [getToken]
+  );
+  /**
+   * Delete a task
+   */
+  const deleteTask = useCallback(
+    async (taskId: string) => {
+      try {
+        setError(null);
+        const token = await getToken();
+        const client = await createAuthenticatedApiClient(token || "");
+        await client.delete(API_ENDPOINTS.DELETE_TASK(taskId));
+        setTasks((prev) => prev.filter((t) => t._id !== taskId));
+      } catch (err) {
+        const message = handleApiError(err);
+        setError(message);
+        throw err;
+      }
+    },
+    [getToken]
+  );
+  /**
+   * Fetch a single task with populated subtasks
+   */
+  const getTaskWithSubtasks = useCallback(
+    async (taskId: string) => {
+      try {
+        setError(null);
+        const token = await getToken();
+        const client = await createAuthenticatedApiClient(token || "");
+        const response = await client.get<{
+          success: boolean;
+          data: ITaskWithSubtasks;
+        }>(API_ENDPOINTS.TASK_BY_ID(taskId));
+        return response.data.data;
+      } catch (err) {
+        const message = handleApiError(err);
+        setError(message);
+        throw err;
+      }
+    },
+    [getToken]
+  );
+
+  // Fetch tasks on mount
+  useEffect(() => {
+    fetchTasks();
+  }, [fetchTasks]);
+
+  return {
+    tasks,
+    loading,
+    error,
+    fetchTasks,
+    createTask,
+    updateTask,
+    deleteTask,
+    getTaskWithSubtasks,
+  };
+}
+
+/**
+ * Hook for managing subtasks
+ */
+export function useSubtasks() {
+  const { getToken } = useAuth();
+  const [subtasks, setSubtasks] = useState<ISubtask[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  /**
+   * Complete a subtask
+   */
+  const completeSubtask = useCallback(
+    async (subtaskId: string) => {
+      try {
+        setError(null);
+        const token = await getToken();
+        const client = await createAuthenticatedApiClient(token || "");
+        const response = await client.post<{
+          success: boolean;
+          data: { subtask: ISubtask };
+        }>(API_ENDPOINTS.COMPLETE_SUBTASK(subtaskId));
+        setSubtasks((prev) =>
+          prev.map((s) =>
+            s._id === subtaskId ? response.data.data.subtask : s
+          )
+        );
+        return response.data.data.subtask;
+      } catch (err) {
+        const message = handleApiError(err);
+        setError(message);
+        throw err;
+      }
+    },
+    [getToken]
+  );
+  /**
+   * Add a new subtask to a task
+   */
+  const addSubtask = useCallback(
+    async (
+      taskId: string,
+      subtaskData: { title: string; duration: number }
+    ) => {
+      try {
+        setError(null);
+        const token = await getToken();
+        const client = await createAuthenticatedApiClient(token || "");
+        const response = await client.post<{
+          success: boolean;
+          data: { subtask: ISubtask; task: ITask };
+        }>(API_ENDPOINTS.ADD_SUBTASK(taskId), subtaskData);
+        return response.data.data;
+      } catch (err) {
+        const message = handleApiError(err);
+        setError(message);
+        throw err;
+      }
+    },
+    [getToken]
+  );
+
+  /**
+   * Update a subtask
+   */
+  const updateSubtask = useCallback(
+    async (subtaskId: string, subtaskData: Partial<ISubtask>) => {
+      try {
+        setError(null);
+        const token = await getToken();
+        const client = await createAuthenticatedApiClient(token || "");
+        const response = await client.put<{
+          success: boolean;
+          data: ISubtask;
+        }>(API_ENDPOINTS.UPDATE_SUBTASK(subtaskId), subtaskData);
+        return response.data.data;
+      } catch (err) {
+        const message = handleApiError(err);
+        setError(message);
+        throw err;
+      }
+    },
+    [getToken]
+  );
+
+  return {
+    subtasks,
+    error,
+    completeSubtask,
+    addSubtask,
+    updateSubtask,
+  };
+}
