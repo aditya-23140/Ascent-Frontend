@@ -1,3 +1,5 @@
+"use client";
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { useSocket } from "@/components/SocketProvider";
@@ -5,7 +7,7 @@ import { useSocket } from "@/components/SocketProvider";
 /**
  * Timer state types
  */
-export type TimerState = "Focus" | "Overflow" | "Break" | "Idle";
+export type TimerState = "Focus" | "Overflow" | "Break" | "Idle" | "Completed";
 
 /**
  * Interface for subtask data
@@ -18,21 +20,7 @@ export interface Subtask {
 }
 
 /**
- * Interface for timer context
- */
-export interface TimerContext {
-  state: TimerState;
-  currentSubtask: Subtask | null;
-  remainingTime: number; // in seconds
-  totalDuration: number; // in seconds
-  isRunning: boolean;
-  progress: number; // percentage (0-100)
-  taskId: string | null;
-  subtaskId: string | null;
-}
-
-/**
- * Custom hook for managing focus timer with Socket.IO sync
+ * Custom hook for managing focus timer with native WebSocket sync
  */
 export const useFocusTimer = () => {
   const { getToken } = useAuth();
@@ -45,194 +33,126 @@ export const useFocusTimer = () => {
   const [totalDuration, setTotalDuration] = useState(0); // in seconds
   const [isRunning, setIsRunning] = useState(false);
   const [taskId, setTaskId] = useState<string | null>(null);
-  const [subtaskId, setSubtaskId] = useState<string | null>(null);
-  const [sessionId, setSessionId] = useState<string | null>(null); // For tracking overflow time
-  const overflowTimeRef = useRef(0);
-  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Timer event listeners
+  // Sync state from server via WebSocket
   useEffect(() => {
     if (!socket) return;
 
-    const onSessionStarted = (data: any) => {
-      console.log("useFocusTimer: Session started from server:", data);
-      setTaskId(data.taskId);
-      setSubtaskId(data.subtaskId);
-      setSessionId(data.sessionId);
-      setTimerState("Focus");
-      setIsRunning(true);
-      overflowTimeRef.current = 0;
-    };
-
-    const onSessionPaused = (data: any) => {
-      console.log("useFocusTimer: Session paused from server:", data);
-      setIsRunning(false);
-    };
-
-    const onSubtaskCompleted = (data: any) => {
-      console.log("useFocusTimer: Subtask completed from server:", data);
-      setTimerState("Idle");
-      setIsRunning(false);
-      setRemainingTime(0);
-      overflowTimeRef.current = 0;
-      setCurrentSubtask(null);
-    };
-
-    const onUpdateUi = (data: any) => {
-      console.log("useFocusTimer: UI update from other device:", data);
-      if (data.type === "session_started") {
-        setTimerState("Focus");
-        setIsRunning(true);
-      } else if (data.type === "session_paused") {
-        setIsRunning(false);
-      } else if (data.type === "subtask_completed") {
-        setTimerState("Idle");
-        setIsRunning(false);
+    const handleMessage = (event: MessageEvent) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === "timer_update") {
+          const { phase, remainingSeconds, taskId: serverTaskId } = data.payload;
+          
+          setRemainingTime(remainingSeconds);
+          setTaskId(serverTaskId || null);
+          
+          switch (phase) {
+            case 'work':
+              setTimerState("Focus");
+              setIsRunning(true);
+              break;
+            case 'break':
+              setTimerState("Break");
+              setIsRunning(true);
+              break;
+            case 'completed':
+              setTimerState("Completed");
+              setIsRunning(false);
+              break;
+            case 'idle':
+              setTimerState("Idle");
+              setIsRunning(false);
+              break;
+          }
+        }
+      } catch (error) {
+        console.error("useFocusTimer: Failed to parse message:", error);
       }
     };
 
-    socket.on("session_started", onSessionStarted);
-    socket.on("session_paused", onSessionPaused);
-    socket.on("subtask_completed", onSubtaskCompleted);
-    socket.on("update_ui", onUpdateUi);
-
+    socket.addEventListener("message", handleMessage);
     return () => {
-      socket.off("session_started", onSessionStarted);
-      socket.off("session_paused", onSessionPaused);
-      socket.off("subtask_completed", onSubtaskCompleted);
-      socket.off("update_ui", onUpdateUi);
+      socket.removeEventListener("message", handleMessage);
     };
   }, [socket]);
 
-  // Timer countdown effect
-  useEffect(() => {
-    if (!isRunning) {
-      if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current);
-        timerIntervalRef.current = null;
-      }
-      return;
-    }
-
-    timerIntervalRef.current = setInterval(() => {
-      setRemainingTime((prevTime) => {
-        if (prevTime <= 1) {
-          // Time's up - transition to overflow
-          setTimerState("Overflow");
-          overflowTimeRef.current = 0;
-          return 0;
-        }
-        return prevTime - 1;
+  /**
+   * API Helper for timer controls
+   */
+  const timerAction = useCallback(async (action: 'start' | 'pause' | 'resume' | 'skip', body?: any) => {
+    try {
+      const token = await getToken();
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+      
+      const response = await fetch(`${apiUrl}/api/timer/${action}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: body ? JSON.stringify(body) : undefined
       });
-    }, 1000);
 
-    return () => {
-      if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current);
-        timerIntervalRef.current = null;
+      if (!response.ok) {
+        throw new Error(`Failed to ${action} timer`);
       }
-    };
-  }, [isRunning]);
-
-  // Overflow timer effect
-  useEffect(() => {
-    if (timerState !== "Overflow" || !isRunning) {
-      return;
+      
+      return await response.json();
+    } catch (error) {
+      console.error(`Error in timer ${action}:`, error);
     }
-
-    const overflowInterval = setInterval(() => {
-      overflowTimeRef.current += 1;
-      // Optional: emit overflow time to server
-    }, 1000);
-
-    return () => clearInterval(overflowInterval);
-  }, [timerState, isRunning]);
+  }, [getToken]);
 
   /**
-   * Load a subtask and start timer
+   * Load a subtask and set durations
    */
   const loadSubtask = useCallback((subtask: Subtask, tId: string) => {
     setCurrentSubtask(subtask);
     setTaskId(tId);
-    setSubtaskId(subtask._id);
-    setTotalDuration(subtask.duration * 60); // Convert minutes to seconds
+    setTotalDuration(subtask.duration * 60);
     setRemainingTime(subtask.duration * 60);
-    setTimerState("Focus");
+    setTimerState("Idle");
     setIsRunning(false);
-    overflowTimeRef.current = 0;
   }, []);
 
   /**
    * Start the timer
    */
   const startTimer = useCallback(async () => {
-    if (!currentSubtask || !taskId) {
-      console.error("No subtask or task loaded");
-      return;
-    }
-
-    setIsRunning(true);
-
-    // Emit to server
-    if (socket && isConnected) {
-      socket.emit("start_session", {
-        taskId,
-        subtaskId: currentSubtask._id,
-      });
-    }
-  }, [currentSubtask, taskId, socket, isConnected]);
+    if (!currentSubtask || !taskId) return;
+    await timerAction('start', {
+      duration: totalDuration,
+      taskId,
+      phase: 'work'
+    });
+  }, [currentSubtask, taskId, totalDuration, timerAction]);
 
   /**
    * Pause the timer
    */
   const pauseTimer = useCallback(async () => {
-    setIsRunning(false);
-
-    // Emit to server
-    if (socket && isConnected) {
-      socket.emit("pause_session", {
-        taskId,
-        subtaskId,
-        elapsedTime: totalDuration - remainingTime,
-      });
-    }
-  }, [taskId, subtaskId, totalDuration, remainingTime, socket, isConnected]);
+    await timerAction('pause');
+  }, [timerAction]);
 
   /**
-   * Complete the subtask
+   * Resume the timer
    */
-  const completeSubtask = useCallback(async () => {
-    setIsRunning(false);
-
-    const actualDuration =
-      timerState === "Overflow"
-        ? totalDuration + overflowTimeRef.current
-        : totalDuration - remainingTime;
-
-    // Emit to server
-    if (socket && isConnected) {
-      socket.emit("complete_subtask", {
-        taskId,
-        subtaskId,
-        actualDuration,
-      });
-    }
-
-    // Reset local state
-    setTimerState("Idle");
-    setRemainingTime(0);
-    setCurrentSubtask(null);
-    overflowTimeRef.current = 0;
-  }, [timerState, totalDuration, remainingTime, taskId, subtaskId]);
+  const resumeTimer = useCallback(async () => {
+    await timerAction('resume');
+  }, [timerAction]);
 
   /**
-   * Skip to break
+   * Skip to break or next phase
    */
-  const skipToBreak = useCallback(() => {
-    setTimerState("Break");
-    setIsRunning(true);
-    setRemainingTime(5 * 60); // 5-minute break
-  }, []);
+  const skipToBreak = useCallback(async () => {
+    await timerAction('skip');
+    // Optionally start a break immediately
+    await timerAction('start', {
+      duration: 5 * 60,
+      phase: 'break'
+    });
+  }, [timerAction]);
 
   /**
    * Calculate progress percentage
@@ -252,8 +172,8 @@ export const useFocusTimer = () => {
       .toString()
       .padStart(2, "0")}`;
   };
+
   return {
-    // State
     timerState,
     currentSubtask,
     remainingTime,
@@ -261,17 +181,11 @@ export const useFocusTimer = () => {
     isRunning,
     progress,
     taskId,
-    subtaskId,
-    sessionId,
-
-    // Actions
     loadSubtask,
     startTimer,
     pauseTimer,
-    completeSubtask,
+    resumeTimer,
     skipToBreak,
-
-    // Utilities
     formatTime,
   };
 };

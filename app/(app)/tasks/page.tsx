@@ -67,34 +67,34 @@ function TaskItem({ task, index, onEdit, onDelete }: TaskItemProps) {
       transition={{ delay: index * 0.03 }}
       className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all group"
     >
-      <div 
+      <div
         className="p-5 flex items-center gap-5 cursor-pointer"
         onClick={() => totalSubtasks > 0 && setIsExpanded(!isExpanded)}
       >
         <div className={cn("p-2 rounded-xl transition-colors bg-slate-50 dark:bg-slate-800 group-hover:bg-indigo-50 dark:group-hover:bg-indigo-950/30")}>
-            <StatusIcon className={cn("w-5 h-5", status.color)} />
+          <StatusIcon className={cn("w-5 h-5", status.color)} />
         </div>
-        
+
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3 mb-1">
             <h3 className="text-base font-bold text-slate-900 dark:text-white tracking-tight truncate">
               {task.title}
             </h3>
             <div className="flex items-center gap-1.5 ml-2">
-                <div className={cn("w-1.5 h-1.5 rounded-full", priority.dot)} />
-                <span className={cn("text-[10px] font-bold uppercase tracking-wider", priority.color)}>
-                    {priority.label}
-                </span>
+              <div className={cn("w-1.5 h-1.5 rounded-full", priority.dot)} />
+              <span className={cn("text-[10px] font-bold uppercase tracking-wider", priority.color)}>
+                {priority.label}
+              </span>
             </div>
           </div>
           <div className="flex items-center gap-4 text-xs font-medium text-slate-400">
             <div className="flex items-center gap-1.5">
-                <Calendar className="w-3 h-3" />
-                {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No deadline'}
+              <Calendar className="w-3 h-3" />
+              {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No deadline'}
             </div>
             <div className="flex items-center gap-1.5">
-                <Layers className="w-3 h-3" />
-                {totalSubtasks} Objectives
+              <Layers className="w-3 h-3" />
+              {totalSubtasks} Objectives
             </div>
           </div>
         </div>
@@ -132,19 +132,19 @@ function TaskItem({ task, index, onEdit, onDelete }: TaskItemProps) {
                 <span>{Math.round(progress)}% Completed</span>
               </div>
               <div className="w-full bg-slate-200 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                <motion.div 
-                    initial={{ width: 0 }} 
-                    animate={{ width: `${progress}%` }} 
-                    className="h-full bg-indigo-600 rounded-full" 
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${progress}%` }}
+                  className="h-full bg-indigo-600 rounded-full"
                 />
               </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+
+              <div className="flex flex-col gap-3 mt-4">
                 {subtasks.map((subtask, idx: number) => (
                   <div key={subtask._id || idx} className="flex items-center gap-3 p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-100 dark:border-slate-800 shadow-sm">
                     <CheckCircle2 className={cn("w-4 h-4", subtask.completed ? "text-emerald-500" : "text-slate-200")} />
                     <span className={cn("text-sm font-semibold truncate", subtask.completed ? "text-slate-400 line-through" : "text-slate-700 dark:text-slate-300")}>
-                        {subtask.title}
+                      {subtask.title}
                     </span>
                     {subtask.duration && <span className="ml-auto text-[10px] font-bold text-slate-400 uppercase">{subtask.duration}m</span>}
                   </div>
@@ -193,8 +193,8 @@ function CreateTaskModal({
       const apiClient = await createAuthenticatedApiClient(token);
       const response = await apiClient.post("/api/tasks/generate-subtasks", { title, description });
 
-      if (response.data?.success && response.data?.subtasks) {
-        const subtasksWithIds = response.data.subtasks.map((s: { title: string, duration: number }, idx: number) => ({
+      if (response.data?.success && response.data?.data?.subtasks) {
+        const subtasksWithIds = response.data.data.subtasks.map((s: { title: string, duration: number }, idx: number) => ({
           ...s, id: `gen-${idx}-${Date.now()}`
         }));
         setGeneratedSubtasks(subtasksWithIds);
@@ -219,7 +219,9 @@ function CreateTaskModal({
         priority: priority as "low" | "medium" | "high",
         deadline,
         status: "pending",
-        generateSubtasksAI: selectedSubtaskIds.size > 0,
+        subtasks: generatedSubtasks
+          .filter(s => selectedSubtaskIds.has(s.id))
+          .map(({ title, duration }) => ({ title, duration })),
       });
 
       setTitle(""); setDescription(""); setPriority("medium"); setDeadline(""); setGeneratedSubtasks([]);
@@ -242,8 +244,8 @@ function CreateTaskModal({
             <div className="bg-white dark:bg-slate-950 rounded-3xl shadow-premium-lg border border-slate-200 dark:border-slate-800 max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col pointer-events-auto">
               <div className="px-8 py-6 border-b border-slate-100 dark:border-slate-900 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-indigo-600 rounded-xl"><Plus className="w-5 h-5 text-white" /></div>
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Initialize Objective</h2>
+                  <div className="p-2.5 bg-indigo-600 rounded-xl"><Plus className="w-5 h-5 text-white" /></div>
+                  <h2 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight">Initialize Objective</h2>
                 </div>
                 <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-xl transition-all"><X className="w-5 h-5" /></button>
               </div>
@@ -252,6 +254,11 @@ function CreateTaskModal({
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Objective Title</label>
                   <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Project name or task label..." className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-indigo-600 outline-none transition-all font-semibold" />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Context & Description</label>
+                  <textarea value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Provide additional details or context for this objective..." className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl focus:ring-2 focus:ring-indigo-600 outline-none transition-all font-semibold min-h-[100px] resize-none" />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -301,7 +308,7 @@ function CreateTaskModal({
               <div className="px-8 py-6 border-t border-slate-100 dark:border-slate-900 bg-slate-50/50 dark:bg-slate-900/20 flex gap-4">
                 <button onClick={onClose} className="flex-1 h-12 font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all">Discard</button>
                 <button onClick={handleSubmit} disabled={isSubmitting || !title.trim()} className="flex-2 h-12 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition-all flex items-center justify-center gap-2">
-                    {isSubmitting ? <Loader className="w-5 h-5 animate-spin" /> : "Initiate Workspace"}
+                  {isSubmitting ? <Loader className="w-5 h-5 animate-spin" /> : "Initiate Workspace"}
                 </button>
               </div>
             </div>
@@ -343,14 +350,14 @@ export default function TasksPage() {
           </div>
           <div className="flex items-center gap-4 w-full md:w-auto">
             <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} className="px-4 py-3.5 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl outline-none font-bold text-sm">
-                <option value="all">All Status</option>
-                <option value="pending">Pending</option>
-                <option value="in_progress">Active</option>
-                <option value="completed">Finalized</option>
+              <option value="all">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="in_progress">Active</option>
+              <option value="completed">Finalized</option>
             </select>
             <button onClick={() => setIsCreateModalOpen(true)} className="flex-1 md:flex-none h-[48px] px-6 bg-indigo-600 text-white rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-indigo-700 shadow-lg shadow-indigo-100 dark:shadow-none transition-all">
-                <Plus className="w-4 h-4" />
-                Initialize
+              <Plus className="w-4 h-4" />
+              Initialize
             </button>
           </div>
         </div>
@@ -359,35 +366,35 @@ export default function TasksPage() {
           <div className="flex justify-center py-20"><Loader className="w-10 h-10 text-indigo-600 animate-spin" /></div>
         ) : error ? (
           <div className="bg-rose-50 text-rose-600 p-10 rounded-3xl border border-rose-100 text-center space-y-4">
-              <AlertCircle className="w-10 h-10 mx-auto" />
-              <p className="font-bold text-lg">Failed to synchronize tasks</p>
-              <p className="text-sm opacity-70">{error}</p>
+            <AlertCircle className="w-10 h-10 mx-auto" />
+            <p className="font-bold text-lg">Failed to synchronize tasks</p>
+            <p className="text-sm opacity-70">{error}</p>
           </div>
         ) : (
           <div className="space-y-4">
             <div className="flex items-center justify-between px-2">
-                <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{filteredTasks?.length || 0} Entities Found</h3>
-                <div className="flex gap-4">
-                    <button className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Active Focus</button>
-                    <button className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Archived</button>
-                </div>
+              <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{filteredTasks?.length || 0} Entities Found</h3>
+              <div className="flex gap-4">
+                <button className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">Active Focus</button>
+                <button className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Archived</button>
+              </div>
             </div>
-            
+
             <AnimatePresence mode="popLayout">
-                {filteredTasks?.length ? (
-                    filteredTasks.map((t, i) => (
-                        <TaskItem key={t._id} task={t} index={i} onEdit={(task) => { setSelectedTask(task); setIsDetailModalOpen(true); }} onDelete={async (id) => { if(confirm("Confirm deletion?")) await deleteTask(id); }} />
-                    ))
-                ) : (
-                    <div className="py-32 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] space-y-6">
-                        <div className="w-20 h-20 bg-slate-50 dark:bg-slate-800 rounded-[2rem] flex items-center justify-center mx-auto text-slate-200"><Layout className="w-10 h-10" /></div>
-                        <div className="space-y-2">
-                            <h3 className="text-2xl font-bold tracking-tight">Empty Workspace</h3>
-                            <p className="text-slate-500 max-w-sm mx-auto text-sm">Your objective list is currently empty. Initialize a new task to begin your tracking workflow.</p>
-                        </div>
-                        <button onClick={() => setIsCreateModalOpen(true)} className="px-8 py-3 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all">Create First Task</button>
-                    </div>
-                )}
+              {filteredTasks?.length ? (
+                filteredTasks.map((t, i) => (
+                  <TaskItem key={t._id} task={t} index={i} onEdit={(task) => { setSelectedTask(task); setIsDetailModalOpen(true); }} onDelete={async (id) => { if (confirm("Confirm deletion?")) await deleteTask(id); }} />
+                ))
+              ) : (
+                <div className="py-32 text-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-[2.5rem] space-y-6">
+                  <div className="w-20 h-20 bg-slate-50 dark:bg-slate-800 rounded-[2rem] flex items-center justify-center mx-auto text-slate-200"><Layout className="w-10 h-10" /></div>
+                  <div className="space-y-2">
+                    <h3 className="text-2xl font-bold tracking-tight">Empty Workspace</h3>
+                    <p className="text-slate-500 max-w-sm mx-auto text-sm">Your objective list is currently empty. Initialize a new task to begin your tracking workflow.</p>
+                  </div>
+                  <button onClick={() => setIsCreateModalOpen(true)} className="px-8 py-3 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition-all">Create First Task</button>
+                </div>
+              )}
             </AnimatePresence>
           </div>
         )}

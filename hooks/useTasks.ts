@@ -79,7 +79,10 @@ export function useTasks() {
    * Create a new task
    */
   const createTask = useCallback(
-    async (taskData: Partial<ITask> & { generateSubtasksAI?: boolean }) => {
+    async (taskData: Omit<Partial<ITask>, 'subtasks'> & { 
+      generateSubtasksAI?: boolean;
+      subtasks?: Array<{ title: string; duration: number }>;
+    }) => {
       try {
         setError(null);
         const token = await getToken();

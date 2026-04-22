@@ -40,7 +40,7 @@ export default function TaskDetailModal({
     "low" | "medium" | "high"
   >(task?.priority || "medium");
   const [editedDeadline, setEditedDeadline] = useState(
-    task?.deadline ? new Date(task.deadline).toISOString().slice(0, 16) : ""
+    task?.deadline ? new Date(task.deadline).toISOString().split('T')[0] + 'T' + new Date(task.deadline).toISOString().split('T')[1].slice(0, 5) : ""
   );
 
   // Sync form state when task changes
@@ -50,7 +50,7 @@ export default function TaskDetailModal({
       setEditedDescription(task.description || "");
       setEditedPriority(task.priority);
       setEditedDeadline(
-        task.deadline ? new Date(task.deadline).toISOString().slice(0, 16) : ""
+        task.deadline ? new Date(task.deadline).toISOString().split('T')[0] + 'T' + new Date(task.deadline).toISOString().split('T')[1].slice(0, 5) : ""
       );
       setIsEditing(false);
       setError(null);
@@ -197,7 +197,7 @@ export default function TaskDetailModal({
                       {isEditing ? "Modify Task" : "Task Details"}
                     </h2>
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1.5">
-                      {isEditing ? "Editing mode" : `Ref: ${task._id.slice(-8)}`}
+                      {isEditing ? "Editing mode" : `Ref: ${(task._id || (task as any).id || "").slice(-8)}`}
                     </p>
                   </div>
                 </div>
@@ -297,7 +297,7 @@ export default function TaskDetailModal({
                        </div>
                        <div className="space-y-1.5">
                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</p>
-                          <span className="text-sm font-bold text-slate-900 dark:text-white capitalize">{task.status.replace('_', ' ')}</span>
+                          <span className="text-sm font-bold text-slate-900 dark:text-white capitalize">{(task.status || "pending").replace('_', ' ')}</span>
                        </div>
                        <div className="space-y-1.5">
                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Deadline</p>

@@ -1,12 +1,11 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useRef, useState } from "react";
-import { Socket } from "socket.io-client";
 import { useAuth, useUser } from "@clerk/nextjs";
 import { getSocket, disconnectSocket } from "@/lib/socket";
 
 interface SocketContextType {
-  socket: Socket | null;
+  socket: WebSocket | null;
   isConnected: boolean;
 }
 
@@ -21,12 +20,12 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const { getToken } = useAuth();
   const { isSignedIn } = useUser();
   const [isConnected, setIsConnected] = useState(false);
-  const socketRef = useRef<Socket | null>(null);
+  const socketRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
     if (!isSignedIn) {
       if (socketRef.current) {
-        console.log("SocketProvider: User signed out, disconnecting socket.");
+        console.log("SocketProvider: User signed out, disconnecting WebSocket.");
         disconnectSocket();
         socketRef.current = null;
         setIsConnected(false);
@@ -39,35 +38,38 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         const token = await getToken();
         if (!token) return;
 
-        console.log("SocketProvider: Initializing global socket.");
+        console.log("SocketProvider: Initializing native WebSocket.");
         const socket = getSocket(token);
         socketRef.current = socket;
 
-        if (!socket.connected) {
-          socket.connect();
-        }
-
-        const onConnect = () => {
-          console.log("SocketProvider: Socket connected ID:", socket.id);
+        const onOpen = () => {
+          console.log("SocketProvider: WebSocket connected.");
           setIsConnected(true);
         };
 
-        const onDisconnect = () => {
-          console.log("SocketProvider: Socket disconnected.");
+        const onClose = () => {
+          console.log("SocketProvider: WebSocket disconnected.");
           setIsConnected(false);
         };
 
-        socket.on("connect", onConnect);
-        socket.on("disconnect", onDisconnect);
+        const onError = (e: Event) => {
+          console.error("SocketProvider: WebSocket error:", e);
+          setIsConnected(false);
+        };
 
-        // Set initial state if already connected
-        if (socket.connected) {
+        socket.addEventListener("open", onOpen);
+        socket.addEventListener("close", onClose);
+        socket.addEventListener("error", onError);
+
+        // Check current state in case it connected instantly
+        if (socket.readyState === WebSocket.OPEN) {
           setIsConnected(true);
         }
 
         return () => {
-          socket.off("connect", onConnect);
-          socket.off("disconnect", onDisconnect);
+          socket.removeEventListener("open", onOpen);
+          socket.removeEventListener("close", onClose);
+          socket.removeEventListener("error", onError);
         };
       } catch (error) {
         console.error("SocketProvider error:", error);
