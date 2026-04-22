@@ -46,23 +46,20 @@ export const useFocusTimer = () => {
           
           setRemainingTime(remainingSeconds);
           setTaskId(serverTaskId || null);
+          setIsRunning(data.payload.isRunning);
           
           switch (phase) {
             case 'work':
               setTimerState("Focus");
-              setIsRunning(true);
               break;
             case 'break':
               setTimerState("Break");
-              setIsRunning(true);
               break;
             case 'completed':
               setTimerState("Completed");
-              setIsRunning(false);
               break;
             case 'idle':
               setTimerState("Idle");
-              setIsRunning(false);
               break;
           }
         }
@@ -143,6 +140,39 @@ export const useFocusTimer = () => {
   }, [timerAction]);
 
   /**
+   * Complete the current subtask
+   */
+  const completeSubtask = useCallback(async () => {
+    if (!currentSubtask) return;
+    
+    try {
+      const token = await getToken();
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+      
+      const response = await fetch(`${apiUrl}/api/tasks/subtasks/${currentSubtask._id}/complete`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to complete subtask");
+      }
+      
+      // Stop the timer as well
+      await timerAction('pause');
+      setTimerState("Idle");
+      setIsRunning(false);
+      
+      return await response.json();
+    } catch (error) {
+      console.error("Error completing subtask:", error);
+    }
+  }, [currentSubtask, getToken, timerAction]);
+
+  /**
    * Skip to break or next phase
    */
   const skipToBreak = useCallback(async () => {
@@ -185,6 +215,7 @@ export const useFocusTimer = () => {
     startTimer,
     pauseTimer,
     resumeTimer,
+    completeSubtask,
     skipToBreak,
     formatTime,
   };

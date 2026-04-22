@@ -35,7 +35,7 @@ const PriorityIndicator: React.FC<{ priority: TaskCardProps["priority"] }> = ({
     urgent: { dot: "bg-rose-500", label: "Urgent" },
   };
 
-  const config = configs[priority];
+  const config = configs[priority] || configs.medium;
 
   return (
     <div className="flex items-center gap-1.5">
@@ -69,7 +69,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
     completed: { icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/20" },
   };
 
-  const config = statusConfigs[status];
+  const config = statusConfigs[status] || statusConfigs.todo;
   const Icon = config.icon;
 
   return (

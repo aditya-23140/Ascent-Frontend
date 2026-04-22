@@ -19,7 +19,8 @@ import {
   Shield,
   Sparkles,
   Coffee,
-  ArrowRight
+  ArrowRight,
+  RotateCcw
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -44,6 +45,7 @@ export const FocusTimer: React.FC = () => {
     loadSubtask,
     startTimer,
     pauseTimer,
+    resumeTimer,
     completeSubtask,
     skipToBreak,
   } = useFocusTimer();
@@ -78,53 +80,78 @@ export const FocusTimer: React.FC = () => {
     }
   }, [selectedSubtask, selectedTask, loadSubtask]);
 
-  useEffect(() => {
-    if (currentSubtask && !isRunning && timerState === "Focus") {
-      startTimer();
+  const handleFinalize = useCallback(async () => {
+    if (!currentSubtask || !selectedTask) return;
+    
+    // 1. Optimistic Update: Find next subtask immediately
+    const subtasks = selectedTask.subtasks as ISubtask[];
+    const currentIndex = subtasks.findIndex(st => st._id === currentSubtask._id);
+    const nextSubtask = subtasks[currentIndex + 1];
+    
+    // Move to next subtask in UI immediately
+    if (nextSubtask) {
+      setSelectedSubtask(nextSubtask);
+    } else {
+      setSelectedSubtask(null);
     }
-  }, [currentSubtask, isRunning, timerState, startTimer]);
+
+    // 2. Complete subtask in backend (background)
+    try {
+      await completeSubtask();
+    } catch (err) {
+      console.error("Backend finalization failed:", err);
+    }
+  }, [currentSubtask, selectedTask, completeSubtask]);
 
   const stateConfigs = useMemo(() => {
-    const configMap: Record<TimerState, { 
-      accent: string, 
-      bg: string, 
-      text: string, 
-      icon: React.ElementType, 
+    const configMap: Record<TimerState, {
+      accent: string,
+      bg: string,
+      text: string,
+      icon: React.ElementType,
       label: string,
-      metricLabel: string 
+      metricLabel: string
     }> = {
-      Focus: { 
-        accent: "bg-indigo-600", 
-        bg: "bg-indigo-50 dark:bg-indigo-950/20", 
+      Focus: {
+        accent: "bg-indigo-600",
+        bg: "bg-indigo-50 dark:bg-indigo-950/20",
         text: "text-indigo-600 dark:text-indigo-400",
         icon: Target,
         label: "Deep Work",
         metricLabel: "Session Progress"
       },
-      Overflow: { 
-        accent: "bg-orange-500", 
-        bg: "bg-orange-50 dark:bg-orange-950/20", 
+      Overflow: {
+        accent: "bg-orange-500",
+        bg: "bg-orange-50 dark:bg-orange-950/20",
         text: "text-orange-600 dark:text-orange-400",
         icon: Zap,
         label: "Extended",
         metricLabel: "Overtime Duration"
       },
-      Break: { 
-        accent: "bg-emerald-500", 
-        bg: "bg-emerald-50 dark:bg-emerald-950/20", 
+      Break: {
+        accent: "bg-emerald-500",
+        bg: "bg-emerald-50 dark:bg-emerald-950/20",
         text: "text-emerald-600 dark:text-emerald-400",
         icon: Coffee,
         label: "Rest Interval",
         metricLabel: "Break Remaining"
       },
-      Idle: { 
-        accent: "bg-slate-400", 
-        bg: "bg-slate-50 dark:bg-slate-800", 
+      Idle: {
+        accent: "bg-slate-400",
+        bg: "bg-slate-50 dark:bg-slate-800",
         text: "text-slate-500 dark:text-slate-400",
         icon: Clock,
         label: "Awaiting Input",
         metricLabel: "Standby"
       },
+      Completed: {
+        accent: "bg-emerald-600",
+        bg: "bg-emerald-100 dark:bg-emerald-950/30",
+        text: "text-emerald-700 dark:text-emerald-400",
+        icon: Sparkles,
+        label: "Objective Complete",
+        metricLabel: "Session Finished"
+      }
     };
     return configMap[timerState];
   }, [timerState]);
@@ -135,156 +162,169 @@ export const FocusTimer: React.FC = () => {
     <div className="flex-1 p-6 lg:p-12 bg-slate-50 dark:bg-slate-950 min-h-screen">
       <div className="max-w-3xl mx-auto space-y-10">
         <div className="space-y-2">
-            <h1 className="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">Active Focus Console</h1>
-            <p className="text-slate-500 dark:text-slate-400 font-medium">Synchronize your objectives and maintain peak operational intensity.</p>
+          <h1 className="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">Active Focus Console</h1>
+          <p className="text-slate-500 dark:text-slate-400 font-medium">Synchronize your objectives and maintain peak operational intensity.</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            {/* Control Sidebar */}
-            <div className="lg:col-span-5 space-y-6">
-                <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
-                    <div className="space-y-3">
-                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Current Objective</label>
-                        <div className="relative">
-                            <button
-                                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                                disabled={isLoadingTask || loading}
-                                className="w-full h-14 px-4 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl text-left flex items-center justify-between group transition-all"
-                            >
-                                <span className="font-bold text-slate-900 dark:text-white truncate">
-                                    {isLoadingTask ? "Synchronizing..." : selectedTask ? selectedTask.title : "Select Objective"}
-                                </span>
-                                <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform", isDropdownOpen && "rotate-180")} />
-                            </button>
-                            
-                            <AnimatePresence>
-                                {isDropdownOpen && (
-                                    <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} className="absolute top-16 left-0 right-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl z-50 max-h-60 overflow-y-auto">
-                                        {tasks?.map(task => (
-                                            <button key={task._id} onClick={() => handleTaskSelect(task)} className="w-full p-4 text-left hover:bg-slate-50 dark:hover:bg-slate-800 border-b border-slate-100 dark:border-slate-800 last:border-0 transition-colors">
-                                                <p className="font-bold text-slate-900 dark:text-white text-sm">{task.title}</p>
-                                                <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">{(task.subtasks as string[])?.length || 0} Segmented Steps</p>
-                                            </button>
-                                        ))}
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </div>
-                    </div>
+          {/* Control Sidebar */}
+          <div className="lg:col-span-5 space-y-6">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
+              <div className="space-y-3">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Current Objective</label>
+                <div className="relative">
+                  <button
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    disabled={isLoadingTask || loading}
+                    className="w-full h-14 px-4 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl text-left flex items-center justify-between group transition-all"
+                  >
+                    <span className="font-bold text-slate-900 dark:text-white truncate">
+                      {isLoadingTask ? "Synchronizing..." : selectedTask ? selectedTask.title : "Select Objective"}
+                    </span>
+                    <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform", isDropdownOpen && "rotate-180")} />
+                  </button>
 
-                    {selectedTask && (
-                        <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Target Achievement Step</label>
-                            <div className="space-y-2">
-                                {(selectedTask.subtasks as ISubtask[])?.map(st => (
-                                    <button
-                                        key={st._id}
-                                        onClick={() => setSelectedSubtask(st)}
-                                        className={cn(
-                                            "w-full p-4 rounded-2xl text-left border transition-all flex items-center justify-between",
-                                            selectedSubtask?._id === st._id 
-                                                ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-100 dark:shadow-none" 
-                                                : "bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 text-slate-900 dark:text-white hover:border-indigo-200"
-                                        )}
-                                    >
-                                        <div className="flex-1 min-w-0">
-                                            <p className="font-bold text-sm truncate">{st.title}</p>
-                                            <p className={cn("text-[10px] font-bold uppercase mt-1", selectedSubtask?._id === st._id ? "text-white/70" : "text-slate-400")}>{st.duration} min scope</p>
-                                        </div>
-                                        {selectedSubtask?._id === st._id && <ArrowRight className="w-4 h-4 ml-2" />}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
+                  <AnimatePresence>
+                    {isDropdownOpen && (
+                      <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} className="absolute top-16 left-0 right-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl z-50 max-h-60 overflow-y-auto">
+                        {tasks?.map(task => (
+                          <button key={task._id} onClick={() => handleTaskSelect(task)} className="w-full p-4 text-left hover:bg-slate-50 dark:hover:bg-slate-800 border-b border-slate-100 dark:border-slate-800 last:border-0 transition-colors">
+                            <p className="font-bold text-slate-900 dark:text-white text-sm">{task.title}</p>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">{(task.subtasks as string[])?.length || 0} Segmented Steps</p>
+                          </button>
+                        ))}
+                      </motion.div>
                     )}
+                  </AnimatePresence>
                 </div>
-            </div>
+              </div>
 
-            {/* Timer Console */}
-            <div className="lg:col-span-7">
-                <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-premium p-10 flex flex-col items-center text-center space-y-12 h-full">
-                    <div className="space-y-3">
-                        <div className={cn("inline-flex items-center gap-2 px-3 py-1 rounded-full font-black text-[10px] uppercase tracking-[0.2em]", stateConfigs.bg, stateConfigs.text)}>
-                            <StateIcon className="w-3.5 h-3.5" />
-                            {stateConfigs.label}
-                        </div>
-                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-                            {currentSubtask?.title || "Initialize Operational Session"}
-                        </h2>
-                    </div>
-
-                    <div className="relative">
-                        <div className="text-8xl sm:text-9xl font-black text-slate-900 dark:text-white tracking-tighter tabular-nums">
-                            {formatTime(remainingTime)}
-                        </div>
-                        {isRunning && (
-                            <motion.div 
-                                animate={{ scale: [1, 1.05, 1], opacity: [0.1, 0.2, 0.1] }}
-                                transition={{ repeat: Infinity, duration: 2 }}
-                                className={cn("absolute inset-x-0 -inset-y-4 rounded-[4rem] filter blur-xl -z-10", stateConfigs.accent)}
-                            />
+              {selectedTask && (
+                <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Target Achievement Step</label>
+                  <div className="space-y-2">
+                    {(selectedTask.subtasks as ISubtask[])?.filter(st => !st.completed).map(st => (
+                      <button
+                        key={st._id}
+                        onClick={() => setSelectedSubtask(st)}
+                        className={cn(
+                          "w-full p-4 rounded-2xl text-left border transition-all flex items-center justify-between",
+                          selectedSubtask?._id === st._id
+                            ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-100 dark:shadow-none"
+                            : "bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 text-slate-900 dark:text-white hover:border-indigo-200"
                         )}
-                    </div>
-
-                    <div className="w-full space-y-3">
-                        <div className="flex items-center justify-between text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                            <span>{stateConfigs.metricLabel}</span>
-                            <span>{Math.round(progress)}%</span>
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="font-bold text-sm truncate">{st.title}</p>
+                          <p className={cn("text-[10px] font-bold uppercase mt-1", selectedSubtask?._id === st._id ? "text-white/70" : "text-slate-400")}>{st.duration} min scope</p>
                         </div>
-                        <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-                            <motion.div 
-                                className={cn("h-full transition-all", stateConfigs.accent)} 
-                                style={{ width: `${progress}%` }} 
-                            />
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4 w-full">
-                        <button
-                            onClick={isRunning ? pauseTimer : startTimer}
-                            disabled={!currentSubtask}
-                            className={cn(
-                                "h-16 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 transition-all",
-                                !currentSubtask ? "bg-slate-100 text-slate-400" : "bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-black dark:hover:bg-slate-100"
-                            )}
-                        >
-                            {isRunning ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
-                            {isRunning ? "Suspend" : "Excecute"}
-                        </button>
-                        <button
-                            onClick={completeSubtask}
-                            disabled={!currentSubtask}
-                            className={cn(
-                                "h-16 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 transition-all",
-                                !currentSubtask ? "bg-slate-100 text-slate-400" : "bg-indigo-600 text-white hover:bg-indigo-700"
-                            )}
-                        >
-                            <CheckCircle2 className="w-6 h-6" />
-                            Finalize
-                        </button>
-                    </div>
-
-                    {timerState === "Focus" && isRunning && (
-                        <button onClick={skipToBreak} className="text-xs font-bold text-slate-400 hover:text-slate-600 flex items-center gap-2">
-                            <SkipForward className="w-3.5 h-3.5" />
-                            Skip to Rest Interval
-                        </button>
-                    )}
+                        {selectedSubtask?._id === st._id && <ArrowRight className="w-4 h-4 ml-2" />}
+                      </button>
+                    ))}
+                  </div>
                 </div>
+              )}
             </div>
+          </div>
+
+          {/* Timer Console */}
+          <div className="lg:col-span-7">
+            <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-premium p-10 flex flex-col items-center text-center space-y-12 h-full">
+              <div className="space-y-3">
+                <div className={cn("inline-flex items-center gap-2 px-3 py-1 rounded-full font-black text-[10px] uppercase tracking-[0.2em]", stateConfigs.bg, stateConfigs.text)}>
+                  <StateIcon className="w-3.5 h-3.5" />
+                  {stateConfigs.label}
+                </div>
+                <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
+                  {currentSubtask?.title || "Initialize Operational Session"}
+                </h2>
+              </div>
+
+              <div className="relative">
+                <div className="text-8xl sm:text-9xl font-black text-slate-900 dark:text-white tracking-tighter tabular-nums">
+                  {formatTime(remainingTime)}
+                </div>
+                {isRunning && (
+                  <motion.div
+                    animate={{ scale: [1, 1.05, 1], opacity: [0.1, 0.2, 0.1] }}
+                    transition={{ repeat: Infinity, duration: 2 }}
+                    className={cn("absolute inset-x-0 -inset-y-4 rounded-[4rem] filter blur-xl -z-10", stateConfigs.accent)}
+                  />
+                )}
+              </div>
+
+              <div className="w-full space-y-3">
+                <div className="flex items-center justify-between text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
+                  <span>{stateConfigs.metricLabel}</span>
+                  <span>{Math.round(progress)}%</span>
+                </div>
+                <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                  <motion.div
+                    className={cn("h-full transition-all", stateConfigs.accent)}
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-4 w-full">
+                <div className="grid grid-cols-12 gap-4 w-full">
+                  <button
+                    onClick={isRunning ? pauseTimer : (timerState !== "Idle" && timerState !== "Completed" ? resumeTimer : startTimer)}
+                    disabled={!currentSubtask}
+                    className={cn(
+                      "col-span-8 h-16 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 transition-all",
+                      !currentSubtask ? "bg-slate-100 text-slate-400" : "bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-black dark:hover:bg-slate-100"
+                    )}
+                  >
+                    {isRunning ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
+                    {isRunning ? "Suspend" : (timerState !== "Idle" && timerState !== "Completed" ? "Resume" : "Execute")}
+                  </button>
+                  <button
+                    onClick={startTimer}
+                    disabled={!currentSubtask}
+                    title="Reset Timer"
+                    className={cn(
+                      "col-span-4 h-16 rounded-2xl font-bold text-lg flex items-center justify-center transition-all",
+                      !currentSubtask ? "bg-slate-50 text-slate-300" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
+                    )}
+                  >
+                    <RotateCcw className="w-6 h-6" />
+                  </button>
+                </div>
+                <button
+                  onClick={handleFinalize}
+                  disabled={!currentSubtask}
+                  className={cn(
+                    "w-full h-16 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 transition-all",
+                    !currentSubtask ? "bg-slate-100 text-slate-400" : "bg-indigo-600 text-white hover:bg-indigo-700"
+                  )}
+                >
+                  <CheckCircle2 className="w-6 h-6" />
+                  Finalize
+                </button>
+              </div>
+
+              {timerState === "Focus" && isRunning && (
+                <button onClick={skipToBreak} className="text-xs font-bold text-slate-400 hover:text-slate-600 flex items-center gap-2">
+                  <SkipForward className="w-3.5 h-3.5" />
+                  Skip to Rest Interval
+                </button>
+              )}
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-10 border-t border-slate-100 dark:border-slate-900">
-            {[
-                { label: "AI Integration", icon: Sparkles, color: "text-indigo-600" },
-                { label: "Enterprise Security", icon: Shield, color: "text-emerald-600" },
-                { label: "Operational Integrity", icon: Zap, color: "text-orange-600" }
-            ].map((feature, i) => (
-                <div key={i} className="flex items-center gap-3">
-                    <feature.icon className={cn("w-4 h-4", feature.color)} />
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{feature.label}</span>
-                </div>
-            ))}
+          {[
+            { label: "AI Integration", icon: Sparkles, color: "text-indigo-600" },
+            { label: "Enterprise Security", icon: Shield, color: "text-emerald-600" },
+            { label: "Operational Integrity", icon: Zap, color: "text-orange-600" }
+          ].map((feature, i) => (
+            <div key={i} className="flex items-center gap-3">
+              <feature.icon className={cn("w-4 h-4", feature.color)} />
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{feature.label}</span>
+            </div>
+          ))}
         </div>
       </div>
     </div>

@@ -222,7 +222,7 @@ function TasksOverview({
         </Link>
       </div>
 
-      {tasks.length === 0 ? (
+      {(tasks || []).length === 0 ? (
         <div className="bg-white dark:bg-slate-900 rounded-3xl p-16 border border-dashed border-slate-200 dark:border-slate-800 text-center space-y-4">
           <div className="inline-flex items-center justify-center w-14 h-14 bg-slate-50 dark:bg-slate-800 rounded-2xl text-slate-300">
             <Target className="w-7 h-7" />
@@ -234,25 +234,29 @@ function TasksOverview({
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {tasks.slice(0, 4).map((task, index) => (
-            <motion.div
-              key={task._id}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.1 + index * 0.05 }}
-            >
-              <TaskCard
-                id={task._id}
-                title={task.title}
-                priority={task.priority as "low" | "medium" | "high" | "urgent"}
-                status={task.status as "todo" | "in_progress" | "completed"}
-                subtaskCount={task.subtasks?.length || 0}
-                completedSubtasks={0}
-                deadline={task.dueDate}
-                onTaskSelect={onTaskSelect}
-              />
-            </motion.div>
-          ))}
+          {(tasks || []).slice(0, 4).map((task, index) => {
+            const subtasks = (task.subtasks as any[]) || [];
+            const completedCount = subtasks.filter(s => s.completed).length;
+            return (
+              <motion.div
+                key={task._id}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.1 + index * 0.05 }}
+              >
+                <TaskCard
+                  id={task._id}
+                  title={task.title}
+                  priority={task.priority as "low" | "medium" | "high" | "urgent"}
+                  status={task.status as "todo" | "in_progress" | "completed"}
+                  subtaskCount={subtasks.length}
+                  completedSubtasks={completedCount}
+                  deadline={task.deadline}
+                  onTaskSelect={onTaskSelect}
+                />
+              </motion.div>
+            );
+          })}
         </div>
       )}
     </div>

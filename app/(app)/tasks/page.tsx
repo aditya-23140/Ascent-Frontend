@@ -90,7 +90,7 @@ function TaskItem({ task, index, onEdit, onDelete }: TaskItemProps) {
           <div className="flex items-center gap-4 text-xs font-medium text-slate-400">
             <div className="flex items-center gap-1.5">
               <Calendar className="w-3 h-3" />
-              {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No deadline'}
+              {task.deadline ? new Date(task.deadline).toLocaleDateString() : 'No deadline'}
             </div>
             <div className="flex items-center gap-1.5">
               <Layers className="w-3 h-3" />
