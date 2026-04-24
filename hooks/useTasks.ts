@@ -18,7 +18,8 @@ export interface ITask {
   deadline?: string;
   priority: "low" | "medium" | "high";
   status: "pending" | "in_progress" | "completed";
-  subtasks: string[]; // Array of subtask IDs
+  completed: boolean;
+  subtasks: ISubtask[]; // Populated from backend (includes: { subtasks: true })
   createdAt: string;
   updatedAt: string;
 }
@@ -168,6 +169,30 @@ export function useTasks() {
     [getToken]
   );
 
+  /**
+   * Reorder tasks
+   */
+  const reorderTasks = useCallback(
+    async (orderedIds: string[]) => {
+      try {
+        setError(null);
+        // Optimistically update local state
+        const taskMap = new Map(tasks.map(t => [t._id, t]));
+        const newTasks = orderedIds.map(id => taskMap.get(id)).filter(Boolean) as ITask[];
+        setTasks(newTasks);
+
+        const token = await getToken();
+        const client = await createAuthenticatedApiClient(token || "");
+        await client.post(API_ENDPOINTS.REORDER_TASKS, orderedIds.map((id, index) => ({ id, position: index })));
+      } catch (err) {
+        const message = handleApiError(err);
+        setError(message);
+        fetchTasks(); // Rollback on error
+      }
+    },
+    [getToken, tasks, fetchTasks]
+  );
+
   // Fetch tasks on mount
   useEffect(() => {
     fetchTasks();
@@ -182,6 +207,7 @@ export function useTasks() {
     updateTask,
     deleteTask,
     getTaskWithSubtasks,
+    reorderTasks,
   };
 }
 
@@ -269,11 +295,30 @@ export function useSubtasks() {
     [getToken]
   );
 
+  /**
+   * Reorder subtasks
+   */
+  const reorderSubtasks = useCallback(
+    async (taskId: string, orderedIds: string[]) => {
+      try {
+        setError(null);
+        const token = await getToken();
+        const client = await createAuthenticatedApiClient(token || "");
+        await client.post(API_ENDPOINTS.REORDER_SUBTASKS(taskId), orderedIds.map((id, index) => ({ id, position: index })));
+      } catch (err) {
+        const message = handleApiError(err);
+        setError(message);
+      }
+    },
+    [getToken]
+  );
+
   return {
     subtasks,
     error,
     completeSubtask,
     addSubtask,
     updateSubtask,
+    reorderSubtasks,
   };
 }

@@ -36,22 +36,22 @@ export const TaskList: React.FC<TaskListProps> = ({
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-6"
+        className="flex items-center justify-between border-b border-border pb-6"
       >
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <LayoutGrid className="w-4 h-4 text-indigo-600" />
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Operational Console</p>
+            <LayoutGrid className="w-4 h-4 text-primary" />
+            <p className="text-[10px] font-black text-rum-600 uppercase tracking-[0.2em]">Operational Console</p>
           </div>
-          <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Project Objectives</h2>
+          <h2 className="text-3xl font-black text-foreground tracking-tight">Project Objectives</h2>
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="hidden sm:flex bg-slate-50 dark:bg-slate-800 p-1 rounded-xl border border-slate-100 dark:border-slate-700">
-            <button className="p-2 bg-white dark:bg-slate-900 rounded-lg shadow-sm">
-              <LayoutGrid className="w-4 h-4 text-indigo-600" />
+          <div className="hidden sm:flex bg-muted p-1 rounded-xl border border-border">
+            <button className="p-2 bg-card rounded-lg shadow-sm">
+              <LayoutGrid className="w-4 h-4 text-primary" />
             </button>
-            <button className="p-2 text-slate-400">
+            <button className="p-2 text-rum-600">
               <List className="w-4 h-4" />
             </button>
           </div>
@@ -59,7 +59,7 @@ export const TaskList: React.FC<TaskListProps> = ({
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={onCreateTask}
-            className="flex items-center gap-3 px-6 h-12 bg-indigo-600 text-white rounded-xl font-bold text-sm uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 dark:shadow-none"
+            className="flex items-center gap-3 px-6 h-12 bg-primary text-primary-foreground rounded-xl font-bold text-sm uppercase tracking-widest hover:opacity-90 transition-all shadow-xl shadow-primary/20"
           >
             <Plus className="w-5 h-5" />
             <span>Initialize Objective</span>
@@ -73,20 +73,20 @@ export const TaskList: React.FC<TaskListProps> = ({
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center py-24 bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-sm space-y-6"
+            className="text-center py-24 bg-card dark:bg-card rounded-[2.5rem] border border-border dark:border-border shadow-sm space-y-6"
           >
-            <div className="w-24 h-24 bg-slate-50 dark:bg-slate-800 rounded-[2rem] flex items-center justify-center mx-auto border border-slate-100 dark:border-slate-700 shadow-inner">
-              <Target className="w-10 h-10 text-slate-200" />
+            <div className="w-24 h-24 bg-muted/50 dark:bg-border rounded-[2rem] flex items-center justify-center mx-auto border border-border dark:border-rum-700 shadow-inner">
+              <Target className="w-10 h-10 text-border" />
             </div>
             <div className="space-y-2">
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Zero Objectives Identified</h3>
-              <p className="text-slate-500 max-w-xs mx-auto font-medium text-sm leading-relaxed">
+              <h3 className="text-2xl font-bold text-foreground tracking-tight">Zero Objectives Identified</h3>
+              <p className="text-rum-600 max-w-xs mx-auto font-medium text-sm leading-relaxed">
                 The operative queue is currently vacant. Initialize your first objective to commence productivity tracking.
               </p>
             </div>
             <button
               onClick={onCreateTask}
-              className="px-8 h-12 bg-indigo-600 text-white rounded-xl font-black text-sm uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 dark:shadow-none"
+              className="px-8 h-12 bg-primary text-primary-foreground rounded-xl font-black text-sm uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 dark:shadow-none"
             >
               Get Started
             </button>
@@ -125,3 +125,12 @@ export const TaskList: React.FC<TaskListProps> = ({
 };
 
 export default TaskList;
+
+
+
+
+
+
+
+
+

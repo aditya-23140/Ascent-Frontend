@@ -74,14 +74,16 @@ export const FocusTimerAdvanced: React.FC<FocusTimerAdvancedProps> = ({
     return configs[size];
   }, [size]);
 
-    const stateConfigs = useMemo(() => {
-      const configs: Record<TimerState | "Idle", { gradient: string, color: string, bg: string, icon: React.ElementType }> = {
-      Focus: { gradient: "bg-indigo-600", color: "text-indigo-600", bg: "bg-indigo-50", icon: Zap },
-      Overflow: { gradient: "bg-orange-500", color: "text-orange-600", bg: "bg-orange-50", icon: AlertCircle },
-      Break: { gradient: "bg-emerald-500", color: "text-emerald-600", bg: "bg-emerald-50", icon: Coffee },
-      Idle: { gradient: "bg-slate-400", color: "text-slate-500", bg: "bg-slate-50", icon: Clock },
+  const stateConfigs = useMemo(() => {
+    const configs: Record<TimerState, { gradient: string, color: string, bg: string, icon: React.ElementType, label: string }> = {
+      FOCUS: { gradient: "bg-primary", color: "text-primary", bg: "bg-indigo-50", icon: Zap, label: "Focusing" },
+      HYPERFOCUS: { gradient: "bg-orange-500", color: "text-orange-600", bg: "bg-orange-50", icon: AlertCircle, label: "Deep Work" },
+      BREAK: { gradient: "bg-emerald-500", color: "text-emerald-600", bg: "bg-emerald-50", icon: Coffee, label: "Break" },
+      IDLE: { gradient: "bg-rum-400", color: "text-rum-600", bg: "bg-muted/50", icon: Clock, label: "Ready" },
+      DISENGAGED: { gradient: "bg-rose-500", color: "text-rose-600", bg: "bg-rose-50", icon: AlertCircle, label: "Refocusing" },
+      COMPLETED: { gradient: "bg-emerald-600", color: "text-emerald-600", bg: "bg-emerald-50", icon: CheckCircle2, label: "Done" },
     };
-    return configs[timerState] || configs.Idle;
+    return configs[timerState] || configs.IDLE;
   }, [timerState]);
 
   const StateIcon = stateConfigs.icon;
@@ -90,19 +92,19 @@ export const FocusTimerAdvanced: React.FC<FocusTimerAdvancedProps> = ({
     <div className={cn(
       "rounded-[2.5rem] border shadow-premium transition-all",
       sizeConfig.cardPadding,
-      theme === "dark" ? "bg-slate-900 border-slate-800" : "bg-white border-slate-100"
+      theme === "dark" ? "bg-card border-border" : "bg-card border-border"
     )}>
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className={cn("flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest", stateConfigs.bg, stateConfigs.color)}>
           <StateIcon className="w-3.5 h-3.5" />
-          {timerState}
+          {stateConfigs.label}
         </div>
         <button
           onClick={() => setShowStats(!showStats)}
-          className="p-2 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl transition-colors"
+          className="p-2 hover:bg-muted/50 dark:hover:bg-border rounded-xl transition-colors"
         >
-          <BarChart3 className="w-4 h-4 text-slate-400" />
+          <BarChart3 className="w-4 h-4 text-rum-600" />
         </button>
       </div>
 
@@ -111,29 +113,29 @@ export const FocusTimerAdvanced: React.FC<FocusTimerAdvancedProps> = ({
         <h3 className={cn(
           "font-black tracking-tight truncate",
           size === "compact" ? "text-lg" : "text-3xl",
-          theme === "dark" ? "text-white" : "text-slate-900"
+          theme === "dark" ? "text-white" : "text-foreground"
         )}>
           {currentSubtask?.title || "Initialize Session"}
         </h3>
-        <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Operational Segment</p>
+        <p className="text-xs font-bold text-rum-600 uppercase tracking-widest mt-1">Operational Segment</p>
       </div>
 
       {/* Timer Display */}
       <div className={cn(
         "text-center mb-10 font-black tracking-tighter tabular-nums",
         sizeConfig.timerText,
-        theme === "dark" ? "text-white" : "text-slate-900"
+        theme === "dark" ? "text-white" : "text-foreground"
       )}>
         {formatTime(remainingTime)}
       </div>
 
       {/* Progress */}
       <div className="mb-10 space-y-3">
-        <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
+        <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-rum-600">
           <span>Operational Efficiency</span>
           <span className={stateConfigs.color}>{Math.floor(progress)}%</span>
         </div>
-        <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+        <div className="w-full bg-border dark:bg-border h-2 rounded-full overflow-hidden">
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${progress}%` }}
@@ -150,7 +152,7 @@ export const FocusTimerAdvanced: React.FC<FocusTimerAdvancedProps> = ({
           className={cn(
             "w-full rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-xl flex items-center justify-center gap-3",
             sizeConfig.buttonPadding,
-            isRunning ? "bg-slate-900 text-white" : "bg-indigo-600 text-white shadow-indigo-100 dark:shadow-none"
+            isRunning ? "bg-card text-white" : "bg-primary text-primary-foreground shadow-indigo-100 dark:shadow-none"
           )}
         >
           {isRunning ? <Pause className="w-4 h-4 fill-white" /> : <Play className="w-4 h-4 fill-white" />}
@@ -164,7 +166,7 @@ export const FocusTimerAdvanced: React.FC<FocusTimerAdvancedProps> = ({
             className={cn(
               "rounded-2xl font-black text-[10px] uppercase tracking-widest border transition-all flex items-center justify-center gap-2",
               sizeConfig.buttonPadding,
-              "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white hover:border-indigo-600"
+              "bg-card dark:bg-card border-border dark:border-border text-foreground hover:border-primary"
             )}
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
@@ -172,11 +174,11 @@ export const FocusTimerAdvanced: React.FC<FocusTimerAdvancedProps> = ({
           </button>
           <button
             onClick={skipToBreak}
-            disabled={timerState !== "Focus"}
+            disabled={timerState !== "FOCUS"}
             className={cn(
               "rounded-2xl font-black text-[10px] uppercase tracking-widest border transition-all flex items-center justify-center gap-2",
               sizeConfig.buttonPadding,
-              "bg-slate-50 dark:bg-slate-800 border-transparent text-slate-400 hover:text-slate-600"
+              "bg-muted/50 dark:bg-border border-transparent text-rum-600 hover:text-rum-600"
             )}
           >
             <SkipForward className="w-3.5 h-3.5" />
@@ -186,17 +188,17 @@ export const FocusTimerAdvanced: React.FC<FocusTimerAdvancedProps> = ({
       </div>
 
       {/* Secondary Controls */}
-      <div className="mt-8 pt-8 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+      <div className="mt-8 pt-8 border-t border-border dark:border-border flex items-center justify-between">
         <button
           onClick={() => setSoundEnabled(!soundEnabled)}
-          className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-600 transition-colors"
+          className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-rum-600 hover:text-primary transition-colors"
         >
           {soundEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
           Aural Feedback: {soundEnabled ? "Active" : "Silent"}
         </button>
-        <div className="flex items-center gap-1.5 px-3 py-1 bg-slate-50 dark:bg-slate-800 rounded-full">
-          <Info className="w-3 h-3 text-slate-400" />
-          <span className="text-[9px] font-bold text-slate-400 uppercase">Synchronized</span>
+        <div className="flex items-center gap-1.5 px-3 py-1 bg-muted/50 dark:bg-border rounded-full">
+          <Info className="w-3 h-3 text-rum-600" />
+          <span className="text-[9px] font-bold text-rum-600 uppercase">Synchronized</span>
         </div>
       </div>
     </div>
@@ -204,3 +206,12 @@ export const FocusTimerAdvanced: React.FC<FocusTimerAdvancedProps> = ({
 };
 
 export default FocusTimerAdvanced;
+
+
+
+
+
+
+
+
+

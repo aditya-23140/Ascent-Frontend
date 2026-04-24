@@ -19,8 +19,8 @@ export default function SignInPage() {
 
   if (!isLoaded) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+      <div className="min-h-screen flex items-center justify-center bg-muted dark:bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -73,17 +73,16 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-6">
+    <div className="min-h-screen bg-muted dark:bg-background flex flex-col items-center justify-center p-6">
       <div className="w-full max-w-[400px]">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-indigo-600 rounded-xl mb-4 shadow-lg shadow-indigo-200 dark:shadow-none">
-            <span className="text-white font-bold text-xl">A</span>
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-primary rounded-xl mb-4 shadow-lg shadow-primary/20 dark:shadow-none"><span className="text-primary-foreground font-bold text-xl">A</span>
           </div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Welcome back</h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-2">Enter your credentials to access Ascent</p>
+          <h1 className="text-3xl font-bold text-foreground tracking-tight">Welcome back</h1>
+          <p className="text-rum-900 dark:text-rum-800 mt-2">Enter your credentials to access Ascent</p>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm p-8">
+        <div className="bg-background dark:bg-card border border-border rounded-2xl shadow-sm p-8">
           <form onSubmit={handleSignIn} className="space-y-5">
             {error && (
               <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 text-sm px-4 py-3 rounded-xl">
@@ -92,40 +91,40 @@ export default function SignInPage() {
             )}
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">
+              <label className="text-sm font-medium text-foreground dark:text-rum-700 ml-1">
                 Email address
               </label>
               <div className="relative">
-                <Mail className="absolute left-3.5 top-3 w-4.5 h-4.5 text-slate-400" />
+                <Mail className="absolute left-3.5 top-3 w-4.5 h-4.5 text-rum-800" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   placeholder="name@company.com"
-                  className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-xl pl-11 pr-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-indigo-600 transition-all outline-none"
+                  className="w-full bg-muted border-none rounded-xl pl-11 pr-4 py-3 text-foreground placeholder-rum-600 focus:ring-2 focus:ring-primary transition-all outline-none"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
               <div className="flex items-center justify-between ml-1">
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                <label className="text-sm font-medium text-foreground dark:text-rum-700">
                   Password
                 </label>
-                <Link href="#" className="text-xs font-semibold text-indigo-600 hover:text-indigo-500">
+                <Link href="#" className="text-xs font-semibold text-primary hover:text-primary">
                   Forgot?
                 </Link>
               </div>
               <div className="relative">
-                <Lock className="absolute left-3.5 top-3 w-4.5 h-4.5 text-slate-400" />
+                <Lock className="absolute left-3.5 top-3 w-4.5 h-4.5 text-rum-800" />
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   placeholder="Enter your password"
-                  className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-xl pl-11 pr-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-indigo-600 transition-all outline-none"
+                  className="w-full bg-muted border-none rounded-xl pl-11 pr-4 py-3 text-foreground placeholder-rum-600 focus:ring-2 focus:ring-primary transition-all outline-none"
                 />
               </div>
             </div>
@@ -133,7 +132,7 @@ export default function SignInPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2"
+              className="w-full h-12 bg-primary hover:bg-rum-600 disabled:opacity-50 text-primary-foreground font-semibold rounded-xl transition-all flex items-center justify-center gap-2"
             >
               {loading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -149,16 +148,16 @@ export default function SignInPage() {
           <div className="mt-6 space-y-4">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-100 dark:border-slate-800"></div>
+                <div className="w-full border-t border-border"></div>
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white dark:bg-slate-900 px-2 text-slate-400 font-bold tracking-widest leading-none">Or continue with</span>
+                <span className="bg-background dark:bg-card px-2 text-rum-800 font-bold tracking-widest leading-none">Or continue with</span>
               </div>
             </div>
 
             <button
               onClick={handleGoogleSignIn}
-              className="w-full h-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-indigo-200 dark:hover:border-indigo-900 rounded-xl font-bold text-sm text-slate-700 dark:text-slate-200 flex items-center justify-center gap-3 transition-all"
+              className="w-full h-12 bg-background dark:bg-card border border-border hover:border-primary/30 dark:hover:border-primary/50 rounded-xl font-bold text-sm text-foreground flex items-center justify-center gap-3 transition-all"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path
@@ -182,12 +181,12 @@ export default function SignInPage() {
             </button>
           </div>
 
-          <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 text-center">
-            <p className="text-sm text-slate-500 dark:text-slate-400">
+          <div className="mt-8 pt-6 border-t border-border text-center">
+            <p className="text-sm text-rum-900 dark:text-rum-800">
               New to Ascent?{" "}
               <Link
                 href="/sign-up"
-                className="text-indigo-600 dark:text-indigo-400 font-semibold hover:underline underline-offset-4"
+                className="text-primary dark:text-rum-800 font-semibold hover:underline underline-offset-4"
               >
                 Create account
               </Link>
@@ -198,3 +197,18 @@ export default function SignInPage() {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

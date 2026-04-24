@@ -2,43 +2,37 @@
 
 import React, { useMemo, useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useTasks, ITask, ISubtask, ITaskWithSubtasks } from "@/hooks/useTasks";
-import {
-  useFocusTimer,
-  type TimerState
-} from "@/hooks/useFocusTimer";
+import { useTasks, ISubtask, ITaskWithSubtasks, ITask } from "@/hooks/useTasks";
+import { useFocusTimer, type TimerState } from "@/hooks/useFocusTimer";
+import { useUserStats } from "@/hooks/useUserStats";
 import {
   ChevronDown,
   Play,
   Pause,
   CheckCircle2,
-  SkipForward,
-  Clock,
+  Coffee,
   Zap,
   Target,
-  Shield,
-  Sparkles,
-  Coffee,
-  ArrowRight,
-  RotateCcw
+  AlertCircle,
+  Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-/**
- * Focus Timer Component - Professional Enterprise Design
- */
 export const FocusTimer: React.FC = () => {
-  const { tasks, getTaskWithSubtasks, loading } = useTasks();
+  const { tasks, getTaskWithSubtasks, loading, fetchTasks } = useTasks();
+  const { stats } = useUserStats();
   const [selectedTask, setSelectedTask] = useState<ITaskWithSubtasks | null>(null);
   const [selectedSubtask, setSelectedSubtask] = useState<ISubtask | null>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isLoadingTask, setIsLoadingTask] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
 
   const {
     timerState,
     currentSubtask,
     remainingTime,
+    secondsElapsed,
+    plannedSeconds,
+    setPlannedSeconds,
     isRunning,
     progress,
     formatTime,
@@ -46,22 +40,21 @@ export const FocusTimer: React.FC = () => {
     startTimer,
     pauseTimer,
     resumeTimer,
+    startBreak,
+    enterHyperFocus,
     completeSubtask,
-    skipToBreak,
   } = useFocusTimer();
 
   const handleTaskSelect = useCallback(
     async (task: ITask) => {
       setIsLoadingTask(true);
-      setLoadError(null);
       try {
         const taskWithSubtasks = await getTaskWithSubtasks(task._id);
         setSelectedTask(taskWithSubtasks);
         setSelectedSubtask(null);
         setIsDropdownOpen(false);
       } catch (err) {
-        setLoadError(err instanceof Error ? err.message : "Failed to load task");
-        setSelectedTask(null);
+        console.error("Failed to load task:", err);
       } finally {
         setIsLoadingTask(false);
       }
@@ -71,260 +64,334 @@ export const FocusTimer: React.FC = () => {
 
   useEffect(() => {
     if (selectedSubtask && selectedTask) {
+      const calibratedAvg = stats?.avgDurationByPriority?.[selectedTask.priority];
       loadSubtask({
         _id: selectedSubtask._id,
         title: selectedSubtask.title,
         duration: selectedSubtask.duration,
         completed: selectedSubtask.completed,
-      }, selectedTask._id);
+      }, selectedTask._id, calibratedAvg);
     }
-  }, [selectedSubtask, selectedTask, loadSubtask]);
-
-  const handleFinalize = useCallback(async () => {
-    if (!currentSubtask || !selectedTask) return;
-    
-    // 1. Optimistic Update: Find next subtask immediately
-    const subtasks = selectedTask.subtasks as ISubtask[];
-    const currentIndex = subtasks.findIndex(st => st._id === currentSubtask._id);
-    const nextSubtask = subtasks[currentIndex + 1];
-    
-    // Move to next subtask in UI immediately
-    if (nextSubtask) {
-      setSelectedSubtask(nextSubtask);
-    } else {
-      setSelectedSubtask(null);
-    }
-
-    // 2. Complete subtask in backend (background)
-    try {
-      await completeSubtask();
-    } catch (err) {
-      console.error("Backend finalization failed:", err);
-    }
-  }, [currentSubtask, selectedTask, completeSubtask]);
+  }, [selectedSubtask, selectedTask, loadSubtask, stats?.avgDurationByPriority]);
 
   const stateConfigs = useMemo(() => {
-    const configMap: Record<TimerState, {
-      accent: string,
+    const configs: Record<TimerState, {
       bg: string,
       text: string,
-      icon: React.ElementType,
-      label: string,
-      metricLabel: string
+      border: string,
+      ambient: string,
+      label: string
     }> = {
-      Focus: {
-        accent: "bg-indigo-600",
-        bg: "bg-indigo-50 dark:bg-indigo-950/20",
-        text: "text-indigo-600 dark:text-indigo-400",
-        icon: Target,
-        label: "Deep Work",
-        metricLabel: "Session Progress"
+      FOCUS: { 
+        bg: "bg-primary/5 dark:bg-primary/10", 
+        text: "text-primary", 
+        border: "border-primary/20", 
+        ambient: "var(--ambient-focus)",
+        label: "Operational Focus" 
       },
-      Overflow: {
-        accent: "bg-orange-500",
-        bg: "bg-orange-50 dark:bg-orange-950/20",
-        text: "text-orange-600 dark:text-orange-400",
-        icon: Zap,
-        label: "Extended",
-        metricLabel: "Overtime Duration"
+      HYPERFOCUS: { 
+        bg: "bg-primary/10 dark:bg-primary/20", 
+        text: "text-primary font-black", 
+        border: "border-primary/40", 
+        ambient: "var(--ambient-hyperfocus)",
+        label: "Deep Work Protocol" 
       },
-      Break: {
-        accent: "bg-emerald-500",
-        bg: "bg-emerald-50 dark:bg-emerald-950/20",
-        text: "text-emerald-600 dark:text-emerald-400",
-        icon: Coffee,
-        label: "Rest Interval",
-        metricLabel: "Break Remaining"
+      BREAK: { 
+        bg: "bg-emerald-50 dark:bg-emerald-950/20", 
+        text: "text-emerald-700 dark:text-emerald-400", 
+        border: "border-emerald-200 dark:border-emerald-800", 
+        ambient: "var(--ambient-break)",
+        label: "Resting" 
       },
-      Idle: {
-        accent: "bg-slate-400",
-        bg: "bg-slate-50 dark:bg-slate-800",
-        text: "text-slate-500 dark:text-slate-400",
-        icon: Clock,
-        label: "Awaiting Input",
-        metricLabel: "Standby"
+      DISENGAGED: { 
+        bg: "bg-rose-50 dark:bg-rose-950/20", 
+        text: "text-rose-700 dark:text-rose-400", 
+        border: "border-rose-200 dark:border-rose-800", 
+        ambient: "var(--ambient-disengaged)",
+        label: "Momentum Loss" 
       },
-      Completed: {
-        accent: "bg-emerald-600",
-        bg: "bg-emerald-100 dark:bg-emerald-950/30",
-        text: "text-emerald-700 dark:text-emerald-400",
-        icon: Sparkles,
-        label: "Objective Complete",
-        metricLabel: "Session Finished"
+      IDLE: { 
+        bg: "bg-card", 
+        text: "text-rum-700 dark:text-rum-100", 
+        border: "border-border", 
+        ambient: "transparent",
+        label: "Ready" 
+      },
+      COMPLETED: { 
+        bg: "bg-rum-100 dark:bg-rum-900", 
+        text: "text-rum-800 dark:text-rum-100", 
+        border: "border-border", 
+        ambient: "transparent",
+        label: "Session Done" 
       }
     };
-    return configMap[timerState];
+    return configs[timerState] || configs.IDLE;
   }, [timerState]);
 
-  const StateIcon = stateConfigs.icon;
-
   return (
-    <div className="flex-1 p-6 lg:p-12 bg-slate-50 dark:bg-slate-950 min-h-screen">
-      <div className="max-w-3xl mx-auto space-y-10">
-        <div className="space-y-2">
-          <h1 className="text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight">Active Focus Console</h1>
-          <p className="text-slate-500 dark:text-slate-400 font-medium">Synchronize your objectives and maintain peak operational intensity.</p>
+    <div 
+      className="p-6 md:p-10 space-y-10 min-h-full transition-colors duration-700"
+      style={{ 
+        "--ambient-current": stateConfigs.ambient,
+        backgroundColor: "var(--ambient-current)"
+      } as React.CSSProperties}
+      data-timer-state={timerState}
+    >
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+        <div>
+          <h1 className="text-2xl font-bold">Timer</h1>
+          <p className="text-sm text-rum-600">Choose a task and start working.</p>
         </div>
+        <div className="flex items-center gap-6 text-sm">
+           <div className="flex items-center gap-2 font-bold text-foreground">
+              <Zap className="w-4 h-4 text-primary" />
+              {stats?.spoonState?.remainingSpoons ?? 12} Spoons
+           </div>
+           <div className="flex items-center gap-2 font-bold text-primary bg-primary/10 px-3 py-1 rounded-lg border border-primary/20">
+              <span className="text-[10px] uppercase tracking-wider opacity-60">Effort Multiplier</span>
+              <span>{stats?.spoonState?.effortMultiplier ?? 1.0}x</span>
+           </div>
+        </div>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Control Sidebar */}
-          <div className="lg:col-span-5 space-y-6">
-            <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
-              <div className="space-y-3">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Current Objective</label>
-                <div className="relative">
-                  <button
-                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    disabled={isLoadingTask || loading}
-                    className="w-full h-14 px-4 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl text-left flex items-center justify-between group transition-all"
-                  >
-                    <span className="font-bold text-slate-900 dark:text-white truncate">
-                      {isLoadingTask ? "Synchronizing..." : selectedTask ? selectedTask.title : "Select Objective"}
-                    </span>
-                    <ChevronDown className={cn("w-4 h-4 text-slate-400 transition-transform", isDropdownOpen && "rotate-180")} />
-                  </button>
-
-                  <AnimatePresence>
-                    {isDropdownOpen && (
-                      <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 5 }} className="absolute top-16 left-0 right-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl z-50 max-h-60 overflow-y-auto">
-                        {tasks?.map(task => (
-                          <button key={task._id} onClick={() => handleTaskSelect(task)} className="w-full p-4 text-left hover:bg-slate-50 dark:hover:bg-slate-800 border-b border-slate-100 dark:border-slate-800 last:border-0 transition-colors">
-                            <p className="font-bold text-slate-900 dark:text-white text-sm">{task.title}</p>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase mt-1">{(task.subtasks as string[])?.length || 0} Segmented Steps</p>
-                          </button>
-                        ))}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </div>
-
-              {selectedTask && (
-                <div className="space-y-3 pt-4 border-t border-slate-100 dark:border-slate-800">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Target Achievement Step</label>
-                  <div className="space-y-2">
-                    {(selectedTask.subtasks as ISubtask[])?.filter(st => !st.completed).map(st => (
-                      <button
-                        key={st._id}
-                        onClick={() => setSelectedSubtask(st)}
-                        className={cn(
-                          "w-full p-4 rounded-2xl text-left border transition-all flex items-center justify-between",
-                          selectedSubtask?._id === st._id
-                            ? "bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-100 dark:shadow-none"
-                            : "bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 text-slate-900 dark:text-white hover:border-indigo-200"
-                        )}
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-10">
+        {/* Task Selection */}
+        <div className="lg:col-span-2 space-y-6">
+           <div className="space-y-4">
+              <label className="text-xs font-bold text-rum-600 uppercase tracking-wider">Select Task</label>
+              <div className="relative">
+                <button
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  className="w-full h-12 px-4 bg-card border border-border rounded-md text-left flex items-center justify-between"
+                >
+                  <span className="text-sm truncate">
+                    {isLoadingTask ? "Loading..." : selectedTask ? selectedTask.title : "Pick a task"}
+                  </span>
+                  <ChevronDown className="w-4 h-4 text-rum-600" />
+                </button>
+                {isDropdownOpen && (
+                  <div className="absolute top-14 left-0 right-0 bg-card border border-border rounded-md shadow-lg z-50 overflow-hidden">
+                    {tasks?.filter(task => !task.completed).map((task, i) => (
+                      <button 
+                        key={task._id || `task-option-${i}`} 
+                        onClick={() => handleTaskSelect(task)} 
+                        className="w-full px-4 py-3 text-left text-sm hover:bg-muted border-b border-border last:border-0"
                       >
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-sm truncate">{st.title}</p>
-                          <p className={cn("text-[10px] font-bold uppercase mt-1", selectedSubtask?._id === st._id ? "text-white/70" : "text-slate-400")}>{st.duration} min scope</p>
-                        </div>
-                        {selectedSubtask?._id === st._id && <ArrowRight className="w-4 h-4 ml-2" />}
+                        {task.title}
                       </button>
                     ))}
                   </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Timer Console */}
-          <div className="lg:col-span-7">
-            <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-premium p-10 flex flex-col items-center text-center space-y-12 h-full">
-              <div className="space-y-3">
-                <div className={cn("inline-flex items-center gap-2 px-3 py-1 rounded-full font-black text-[10px] uppercase tracking-[0.2em]", stateConfigs.bg, stateConfigs.text)}>
-                  <StateIcon className="w-3.5 h-3.5" />
-                  {stateConfigs.label}
-                </div>
-                <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-                  {currentSubtask?.title || "Initialize Operational Session"}
-                </h2>
-              </div>
-
-              <div className="relative">
-                <div className="text-8xl sm:text-9xl font-black text-slate-900 dark:text-white tracking-tighter tabular-nums">
-                  {formatTime(remainingTime)}
-                </div>
-                {isRunning && (
-                  <motion.div
-                    animate={{ scale: [1, 1.05, 1], opacity: [0.1, 0.2, 0.1] }}
-                    transition={{ repeat: Infinity, duration: 2 }}
-                    className={cn("absolute inset-x-0 -inset-y-4 rounded-[4rem] filter blur-xl -z-10", stateConfigs.accent)}
-                  />
                 )}
               </div>
+           </div>
 
-              <div className="w-full space-y-3">
-                <div className="flex items-center justify-between text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">
-                  <span>{stateConfigs.metricLabel}</span>
-                  <span>{Math.round(progress)}%</span>
+           {selectedTask && (
+             <div className="space-y-4">
+                <label className="text-xs font-bold text-rum-600 uppercase tracking-wider">Steps</label>
+                <div className="space-y-2">
+                   {(selectedTask.subtasks as ISubtask[])?.filter(st => !st.completed).map((st, i) => (
+                     <button
+                       key={st._id || `subtask-option-${i}`}
+                       onClick={() => setSelectedSubtask(st)}
+                       className={cn(
+                         "w-full px-4 py-3 rounded-md text-left text-sm border transition-colors",
+                         selectedSubtask?._id === st._id
+                           ? "bg-primary border-primary text-primary-foreground"
+                           : "bg-card border-border text-foreground hover:bg-muted"
+                       )}
+                     >
+                       {st.title} ({st.duration}m)
+                     </button>
+                   ))}
                 </div>
-                <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
-                  <motion.div
-                    className={cn("h-full transition-all", stateConfigs.accent)}
-                    style={{ width: `${progress}%` }}
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-4 w-full">
-                <div className="grid grid-cols-12 gap-4 w-full">
-                  <button
-                    onClick={isRunning ? pauseTimer : (timerState !== "Idle" && timerState !== "Completed" ? resumeTimer : startTimer)}
-                    disabled={!currentSubtask}
-                    className={cn(
-                      "col-span-8 h-16 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 transition-all",
-                      !currentSubtask ? "bg-slate-100 text-slate-400" : "bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-black dark:hover:bg-slate-100"
-                    )}
-                  >
-                    {isRunning ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
-                    {isRunning ? "Suspend" : (timerState !== "Idle" && timerState !== "Completed" ? "Resume" : "Execute")}
-                  </button>
-                  <button
-                    onClick={startTimer}
-                    disabled={!currentSubtask}
-                    title="Reset Timer"
-                    className={cn(
-                      "col-span-4 h-16 rounded-2xl font-bold text-lg flex items-center justify-center transition-all",
-                      !currentSubtask ? "bg-slate-50 text-slate-300" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
-                    )}
-                  >
-                    <RotateCcw className="w-6 h-6" />
-                  </button>
-                </div>
-                <button
-                  onClick={handleFinalize}
-                  disabled={!currentSubtask}
-                  className={cn(
-                    "w-full h-16 rounded-2xl font-bold text-lg flex items-center justify-center gap-3 transition-all",
-                    !currentSubtask ? "bg-slate-100 text-slate-400" : "bg-indigo-600 text-white hover:bg-indigo-700"
-                  )}
-                >
-                  <CheckCircle2 className="w-6 h-6" />
-                  Finalize
-                </button>
-              </div>
-
-              {timerState === "Focus" && isRunning && (
-                <button onClick={skipToBreak} className="text-xs font-bold text-slate-400 hover:text-slate-600 flex items-center gap-2">
-                  <SkipForward className="w-3.5 h-3.5" />
-                  Skip to Rest Interval
-                </button>
-              )}
-            </div>
-          </div>
+             </div>
+           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-10 border-t border-slate-100 dark:border-slate-900">
-          {[
-            { label: "AI Integration", icon: Sparkles, color: "text-indigo-600" },
-            { label: "Enterprise Security", icon: Shield, color: "text-emerald-600" },
-            { label: "Operational Integrity", icon: Zap, color: "text-orange-600" }
-          ].map((feature, i) => (
-            <div key={i} className="flex items-center gap-3">
-              <feature.icon className={cn("w-4 h-4", feature.color)} />
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{feature.label}</span>
-            </div>
-          ))}
+        {/* Timer UI */}
+        <div className="lg:col-span-3">
+           <div className={cn(
+             "border rounded-[2rem] p-10 flex flex-col items-center justify-center text-center space-y-10 transition-all duration-700 bg-card/60 backdrop-blur-sm shadow-xl shadow-primary/5",
+             stateConfigs.border
+           )}>
+              <div className="space-y-2">
+                 <span className={cn("text-[10px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-full border", stateConfigs.text, stateConfigs.border)}>
+                   {stateConfigs.label}
+                 </span>
+                 <h2 className="text-2xl font-bold">
+                   {currentSubtask?.title || "Ready to Start"}
+                 </h2>
+              </div>
+
+              {/* Circular Progress Ring */}
+              <div className="relative w-72 h-72 flex items-center justify-center">
+                 <svg className="w-full h-full -rotate-90 transform" viewBox="0 0 100 100">
+                    {/* Background Track */}
+                    <circle
+                      cx="50"
+                      cy="50"
+                      r="45"
+                      fill="transparent"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      className="text-rum-100 dark:text-muted"
+                    />
+                    {/* Progress Track */}
+                    <motion.circle
+                      cx="50"
+                      cy="50"
+                      r="45"
+                      fill="transparent"
+                      stroke="currentColor"
+                      strokeWidth="3"
+                      strokeDasharray="282.7"
+                      initial={{ strokeDashoffset: 282.7 }}
+                      animate={{ 
+                        strokeDashoffset: 282.7 * (1 - Math.min(progress / 100, 1)),
+                        transition: { duration: 1, ease: "linear" }
+                      }}
+                      className={stateConfigs.text}
+                    />
+                 </svg>
+                 
+                 <div className="absolute inset-0 flex flex-col items-center justify-center space-y-1">
+                    <div className={cn("text-6xl font-black tracking-tighter tabular-nums", stateConfigs.text)}>
+                       {timerState === 'HYPERFOCUS' 
+                         ? formatTime(secondsElapsed - plannedSeconds) 
+                         : timerState === 'DISENGAGED'
+                           ? formatTime(secondsElapsed)
+                           : formatTime(remainingTime)
+                       }
+                    </div>
+                    <div className="text-[10px] font-black text-rum-600 uppercase tracking-[0.2em]">
+                       {timerState === 'HYPERFOCUS' ? 'HyperFocus Active' : timerState === 'DISENGAGED' ? 'Momentum Loss' : 'Remaining Velocity'}
+                    </div>
+                 </div>
+              </div>
+
+              <div className="space-y-6 w-full max-w-sm">
+                 <div className="text-[10px] font-black text-rum-600 uppercase tracking-[0.15em] flex flex-col items-center gap-4">
+                   <div className="flex items-center gap-3">
+                     <span>Suggested: {currentSubtask?.duration || 25}m</span>
+                     <span className="w-1 h-1 rounded-full bg-rum-300" />
+                     <span>Calibrated: {Math.round(plannedSeconds / 60)}m</span>
+                   </div>
+                   
+                   {timerState === 'IDLE' && currentSubtask && (
+                      <div className="flex items-center gap-4 bg-muted/50 p-2 rounded-xl border border-border">
+                        <button 
+                          onClick={() => setPlannedSeconds(prev => Math.max(10 * 60, prev - 5 * 60))}
+                          className="w-8 h-8 flex items-center justify-center rounded-lg bg-background shadow-sm border border-border text-foreground transition-transform active:scale-90"
+                        > - </button>
+                        <div className="flex flex-col items-center">
+                           <span className="text-xl font-black text-foreground">{Math.floor(plannedSeconds / 60)}</span>
+                           <span className="text-[8px]">Minutes</span>
+                        </div>
+                        <button 
+                          onClick={() => setPlannedSeconds(prev => Math.min(90 * 60, prev + 5 * 60))}
+                          className="w-8 h-8 flex items-center justify-center rounded-lg bg-background shadow-sm border border-border text-foreground transition-transform active:scale-90"
+                        > + </button>
+                     </div>
+                   )}
+                 </div>
+
+                 {timerState === 'IDLE' ? (
+                    <button
+                      onClick={startTimer}
+                      disabled={!currentSubtask}
+                      className={cn(
+                        "w-full h-14 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 transition-all active:scale-95 shadow-xl",
+                        !currentSubtask 
+                          ? "bg-muted text-rum-400 cursor-not-allowed border border-border" 
+                          : "bg-primary text-primary-foreground shadow-primary/20"
+                      )}
+                    >
+                      <Play size={16} fill="currentColor" /> Initiate Session
+                    </button>
+                 ) : (
+                   <div className="flex flex-col gap-4">
+                      <div className="grid grid-cols-2 gap-4">
+                         <button
+                           onClick={isRunning ? pauseTimer : resumeTimer}
+                           className="h-14 rounded-2xl bg-primary text-primary-foreground font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2"
+                         >
+                           {isRunning ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}
+                           {isRunning ? "Suspend" : "Resume"}
+                         </button>
+                         <button
+                            onClick={() => startBreak()}
+                            className="h-14 rounded-2xl bg-card border border-border text-foreground font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center transition-all hover:bg-muted"
+                          >
+                           Take Break
+                         </button>
+                      </div>
+                      
+                      {remainingTime <= 0 && timerState === 'FOCUS' && (
+                        <motion.div 
+                          initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          className="p-5 bg-primary rounded-[1.5rem] text-primary-foreground space-y-4 shadow-xl shadow-primary/20"
+                        >
+                           <div className="text-center space-y-1">
+                             <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-80">Session Expired</p>
+                             <p className="text-sm font-bold">Is your task complete?</p>
+                           </div>
+                           <div className="flex flex-col gap-2">
+                              <button 
+                                onClick={async () => {
+                                  const res = await completeSubtask();
+                                  if (res) {
+                                    fetchTasks();
+                                    if (selectedTask) {
+                                      const updated = await getTaskWithSubtasks(selectedTask._id);
+                                      setSelectedTask(updated);
+                                    }
+                                  }
+                                }} 
+                                className="w-full bg-background text-primary py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all hover:bg-rum-100 active:scale-95"
+                              >
+                                Yes, Finalize Task
+                              </button>
+                              <div className="grid grid-cols-2 gap-2">
+                                <button onClick={enterHyperFocus} className="bg-primary/20 text-primary-foreground py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all hover:bg-primary/30 active:scale-95 border border-primary-foreground/20">Keep Working</button>
+                                <button onClick={() => startBreak()} className="bg-primary/20 text-primary-foreground py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all hover:bg-primary/30 active:scale-95 border border-primary-foreground/20">Break</button>
+                              </div>
+                           </div>
+                        </motion.div>
+                      )}
+
+                        <button
+                          onClick={async () => {
+                            const res = await completeSubtask();
+                            if (res) {
+                              fetchTasks();
+                              if (selectedTask) {
+                                const updated = await getTaskWithSubtasks(selectedTask._id);
+                                setSelectedTask(updated);
+                              }
+                            }
+                          }}
+                          className="w-full h-14 rounded-2xl bg-primary/10 border border-primary/20 text-primary font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 shadow-sm transition-all hover:bg-primary/20 active:scale-95"
+                        >
+                           <CheckCircle2 size={16} /> Complete Target
+                        </button>
+                   </div>
+                 )}
+
+                 {timerState === 'DISENGAGED' && (
+                   <motion.div 
+                     initial={{ scale: 0.9, opacity: 0 }}
+                     animate={{ scale: 1, opacity: 1 }}
+                     className="p-4 bg-rose-50 dark:bg-rose-950/30 rounded-xl border border-rose-200 dark:border-rose-900 flex flex-col items-center gap-3"
+                   >
+                      <AlertCircle className="w-6 h-6 text-rose-500" />
+                      <p className="text-xs font-bold text-rose-700 dark:text-rose-400">Momentum is fading. Ready to refocus?</p>
+                      <button onClick={startTimer} className="px-6 py-2 bg-rose-600 text-white rounded-lg text-xs font-bold uppercase tracking-widest shadow-md">Refocus Now</button>
+                   </motion.div>
+                 )}
+              </div>
+           </div>
         </div>
       </div>
     </div>
@@ -332,3 +399,12 @@ export const FocusTimer: React.FC = () => {
 };
 
 export default FocusTimer;
+
+
+
+
+
+
+
+
+

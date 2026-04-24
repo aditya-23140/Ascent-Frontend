@@ -19,6 +19,13 @@ export interface IUserStats {
   nextLevelPoints: number;
   tasksCompletedToday: number;
   focusTimeToday: number; // in minutes
+  spoonState: {
+    spoonsUsed: number;
+    remainingSpoons: number;
+    effortMultiplier: number;
+    isHighEffort: boolean;
+  };
+  avgDurationByPriority?: Record<string, number>;
 }
 
 /**
@@ -32,10 +39,16 @@ export interface IUserProfile {
   email?: string;
   avatar?: string;
   timezone: string;
+  role: "standard" | "student" | "parent";
+  dailySpoonBudget: number;
+  hyperFocusDuration: number;
+  streakShields: number;
+  parentId?: string;
   preferences: {
     theme: "light" | "dark";
     emailNotifications: boolean;
     dailyDigest: boolean;
+    streakReminderFriday: boolean;
   };
 }
 
@@ -103,10 +116,14 @@ export function useUserStats() {
   const updateUserProfile = useCallback(
     async (data: {
       timezone?: string;
+      role?: string;
+      dailySpoonBudget?: number;
+      hyperFocusDuration?: number;
       preferences?: {
         theme?: "light" | "dark";
         emailNotifications?: boolean;
         dailyDigest?: boolean;
+        streakReminderFriday?: boolean;
       };
     }) => {
       try {
@@ -149,4 +166,3 @@ export function useUserStats() {
     updateUserProfile,
   };
 }
-

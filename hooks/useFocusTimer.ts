@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@clerk/nextjs";
 import { useSocket } from "@/components/SocketProvider";
 
 /**
  * Timer state types
  */
-export type TimerState = "Focus" | "Overflow" | "Break" | "Idle" | "Completed";
+export type TimerState = "IDLE" | "FOCUS" | "HYPERFOCUS" | "BREAK" | "DISENGAGED" | "COMPLETED";
 
 /**
  * Interface for subtask data
@@ -24,13 +24,14 @@ export interface Subtask {
  */
 export const useFocusTimer = () => {
   const { getToken } = useAuth();
-  const { socket, isConnected } = useSocket();
+  const { socket } = useSocket();
 
   // Timer state
-  const [timerState, setTimerState] = useState<TimerState>("Idle");
+  const [timerState, setTimerState] = useState<TimerState>("IDLE");
   const [currentSubtask, setCurrentSubtask] = useState<Subtask | null>(null);
   const [remainingTime, setRemainingTime] = useState(0); // in seconds
-  const [totalDuration, setTotalDuration] = useState(0); // in seconds
+  const [secondsElapsed, setSecondsElapsed] = useState(0); // in seconds
+  const [plannedSeconds, setPlannedSeconds] = useState(0); // in seconds
   const [isRunning, setIsRunning] = useState(false);
   const [taskId, setTaskId] = useState<string | null>(null);
 
@@ -42,26 +43,21 @@ export const useFocusTimer = () => {
       try {
         const data = JSON.parse(event.data);
         if (data.type === "timer_update") {
-          const { phase, remainingSeconds, taskId: serverTaskId } = data.payload;
+          const { 
+            state, 
+            remainingSeconds, 
+            secondsElapsed: serverElapsed,
+            plannedSeconds: serverPlanned,
+            taskId: serverTaskId,
+            isRunning: serverRunning
+          } = data.payload;
           
+          setTimerState(state as TimerState);
           setRemainingTime(remainingSeconds);
+          setSecondsElapsed(serverElapsed);
+          setPlannedSeconds(serverPlanned);
           setTaskId(serverTaskId || null);
-          setIsRunning(data.payload.isRunning);
-          
-          switch (phase) {
-            case 'work':
-              setTimerState("Focus");
-              break;
-            case 'break':
-              setTimerState("Break");
-              break;
-            case 'completed':
-              setTimerState("Completed");
-              break;
-            case 'idle':
-              setTimerState("Idle");
-              break;
-          }
+          setIsRunning(serverRunning);
         }
       } catch (error) {
         console.error("useFocusTimer: Failed to parse message:", error);
@@ -77,7 +73,7 @@ export const useFocusTimer = () => {
   /**
    * API Helper for timer controls
    */
-  const timerAction = useCallback(async (action: 'start' | 'pause' | 'resume' | 'skip', body?: any) => {
+  const timerAction = useCallback(async (action: string, body?: any) => {
     try {
       const token = await getToken();
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
@@ -104,12 +100,27 @@ export const useFocusTimer = () => {
   /**
    * Load a subtask and set durations
    */
-  const loadSubtask = useCallback((subtask: Subtask, tId: string) => {
+  // Sync ambient background to :root for global effect
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      const root = document.documentElement;
+      root.style.setProperty('--ambient-bg', `var(--ambient-${timerState.toLowerCase()})`);
+      root.setAttribute('data-timer-state', timerState);
+    }
+  }, [timerState]);
+
+  const loadSubtask = useCallback((subtask: Subtask, tId: string, calibratedMinutes?: number) => {
     setCurrentSubtask(subtask);
     setTaskId(tId);
-    setTotalDuration(subtask.duration * 60);
-    setRemainingTime(subtask.duration * 60);
-    setTimerState("Idle");
+    
+    // Suggest duration: use calibrated avg if available, otherwise AI estimate
+    const durationMin = calibratedMinutes || subtask.duration || 25;
+    const initialDuration = durationMin * 60;
+    
+    setPlannedSeconds(initialDuration);
+    setRemainingTime(initialDuration);
+    setSecondsElapsed(0);
+    setTimerState('IDLE');
     setIsRunning(false);
   }, []);
 
@@ -119,11 +130,10 @@ export const useFocusTimer = () => {
   const startTimer = useCallback(async () => {
     if (!currentSubtask || !taskId) return;
     await timerAction('start', {
-      duration: totalDuration,
-      taskId,
-      phase: 'work'
+      duration: currentSubtask.duration,
+      taskId
     });
-  }, [currentSubtask, taskId, totalDuration, timerAction]);
+  }, [currentSubtask, taskId, timerAction]);
 
   /**
    * Pause the timer
@@ -137,6 +147,20 @@ export const useFocusTimer = () => {
    */
   const resumeTimer = useCallback(async () => {
     await timerAction('resume');
+  }, [timerAction]);
+
+  /**
+   * Start break
+   */
+  const startBreak = useCallback(async (duration?: number) => {
+    await timerAction('break', { duration });
+  }, [timerAction]);
+
+  /**
+   * Enter HyperFocus mode manually
+   */
+  const enterHyperFocus = useCallback(async () => {
+    await timerAction('hyperfocus');
   }, [timerAction]);
 
   /**
@@ -162,8 +186,8 @@ export const useFocusTimer = () => {
       }
       
       // Stop the timer as well
-      await timerAction('pause');
-      setTimerState("Idle");
+      await timerAction('skip'); // skip is stop in routes
+      setTimerState("IDLE");
       setIsRunning(false);
       
       return await response.json();
@@ -176,29 +200,25 @@ export const useFocusTimer = () => {
    * Skip to break or next phase
    */
   const skipToBreak = useCallback(async () => {
-    await timerAction('skip');
-    // Optionally start a break immediately
-    await timerAction('start', {
-      duration: 5 * 60,
-      phase: 'break'
-    });
+    await timerAction('break');
   }, [timerAction]);
 
   /**
    * Calculate progress percentage
    */
   const progress =
-    totalDuration > 0
-      ? ((totalDuration - remainingTime) / totalDuration) * 100
+    plannedSeconds > 0
+      ? (secondsElapsed / plannedSeconds) * 100
       : 0;
 
   /**
    * Format time for display (MM:SS)
    */
   const formatTime = (seconds: number): string => {
-    const minutes = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${minutes.toString().padStart(2, "0")}:${secs
+    const mins = Math.floor(Math.abs(seconds) / 60);
+    const secs = Math.abs(seconds) % 60;
+    const sign = seconds < 0 ? "-" : "";
+    return `${sign}${mins.toString().padStart(2, "0")}:${secs
       .toString()
       .padStart(2, "0")}`;
   };
@@ -207,7 +227,9 @@ export const useFocusTimer = () => {
     timerState,
     currentSubtask,
     remainingTime,
-    totalDuration,
+    secondsElapsed,
+    plannedSeconds,
+    setPlannedSeconds,
     isRunning,
     progress,
     taskId,
@@ -215,6 +237,8 @@ export const useFocusTimer = () => {
     startTimer,
     pauseTimer,
     resumeTimer,
+    startBreak,
+    enterHyperFocus,
     completeSubtask,
     skipToBreak,
     formatTime,

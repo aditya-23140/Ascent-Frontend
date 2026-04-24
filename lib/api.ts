@@ -33,6 +33,8 @@ export const API_ENDPOINTS = {
   DELETE_TASK: (id: string) => `/api/tasks/${id}`,
   GENERATE_SUBTASKS: "/api/tasks/generate-subtasks",
   ADD_SUBTASK: (taskId: string) => `/api/tasks/${taskId}/subtasks`,
+  REORDER_TASKS: "/api/tasks/reorder",
+  REORDER_SUBTASKS: (taskId: string) => `/api/tasks/${taskId}/subtasks/reorder`,
 
   // Subtasks
   SUBTASK_BY_ID: (id: string) => `/api/tasks/subtasks/${id}`,

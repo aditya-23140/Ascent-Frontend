@@ -1,31 +1,70 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #0f172a;
+  /* Rum Palette - The Core Design System */
+  --rum-50: #fafafa;
+  --rum-100: #f6f3f6;
+  --rum-200: #eae0eb;
+  --rum-300: #dccede;
+  --rum-400: #b394b7;
+  --rum-500: #7b5e7f;
+  --rum-600: #644568;
+  --rum-700: #4d3550;
+  --rum-800: #2d232e;
+  --rum-900: #1e141f;
+  --rum-950: #0d060e;
+
+  /* Theme Variables - Light Mode */
+  --background: var(--rum-50);
+  --foreground: var(--rum-950);
   --card: #ffffff;
-  --card-foreground: #0f172a;
+  --card-foreground: var(--rum-950);
   --popover: #ffffff;
-  --popover-foreground: #0f172a;
-  --primary: #4f46e5;
+  --popover-foreground: var(--rum-950);
+  --primary: var(--rum-600);
   --primary-foreground: #ffffff;
-  --secondary: #f1f5f9;
-  --secondary-foreground: #0f172a;
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
-  --accent: #f1f5f9;
-  --accent-foreground: #0f172a;
+  --secondary: var(--rum-100);
+  --secondary-foreground: var(--rum-800);
+  --muted: var(--rum-100);
+  --muted-foreground: var(--rum-500);
+  --accent: var(--rum-200);
+  --accent-foreground: var(--rum-900);
+  
+  /* Ambient Focus State Variables */
+  --ambient-idle: var(--rum-50);
+  --ambient-focus: #fdf6ff; /* Slightly tinted for focus */
+  --ambient-hyperfocus: #f5e6ff; /* Deeper tint */
+  --ambient-break: #f0fdf4;
+  --ambient-disengaged: #fff1f2;
+  --ambient-bg: var(--ambient-idle);
+  
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --border: #e2e8f0;
-  --input: #e2e8f0;
-  --ring: #4f46e5;
-  --radius: 0.75rem;
+  --border: var(--rum-200);
+  --input: var(--rum-100);
+  --ring: var(--rum-500);
+  --radius: 1rem;
 }
 
 @theme inline {
+  --color-rum-50: var(--rum-50);
+  --color-rum-100: var(--rum-100);
+  --color-rum-200: var(--rum-200);
+  --color-rum-300: var(--rum-300);
+  --color-rum-400: var(--rum-400);
+  --color-rum-500: var(--rum-500);
+  --color-rum-600: var(--rum-600);
+  --color-rum-700: var(--rum-700);
+  --color-rum-800: var(--rum-800);
+  --color-rum-900: var(--rum-900);
+  --color-rum-950: var(--rum-950);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-secondary: var(--secondary);
@@ -35,37 +74,70 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-border: var(--border);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #020617;
-    --foreground: #f8fafc;
-    --card: #020617;
-    --card-foreground: #f8fafc;
-    --popover: #020617;
-    --popover-foreground: #f8fafc;
-    --primary: #6366f1;
-    --primary-foreground: #ffffff;
-    --secondary: #1e293b;
-    --secondary-foreground: #f8fafc;
-    --muted: #1e293b;
-    --muted-foreground: #94a3b8;
-    --accent: #1e293b;
-    --accent-foreground: #f8fafc;
-    --destructive: #ef4444;
-    --destructive-foreground: #ffffff;
-    --border: #1e293b;
-    --input: #1e293b;
-    --ring: #6366f1;
+  :root:not(.light) {
+    --background: var(--rum-950);
+    --foreground: var(--rum-100); /* Slightly off-white for softness */
+    --card: var(--rum-900);
+    --card-foreground: var(--rum-50);
+    --popover: var(--rum-900);
+    --popover-foreground: var(--rum-50);
+    --primary: var(--rum-400); /* Better visibility in dark mode */
+    --primary-foreground: var(--rum-950);
+    --secondary: var(--rum-800);
+    --secondary-foreground: var(--rum-100);
+    --muted: var(--rum-950);
+    --muted-foreground: var(--rum-400);
+    --accent: var(--rum-800);
+    --accent-foreground: var(--rum-100);
+    --border: var(--rum-800);
+    --input: var(--rum-800);
+    --ring: var(--rum-400);
+
+    /* Ambient Focus State Variables (Dark Mode) */
+    --ambient-idle: var(--rum-950);
+    --ambient-focus: #140d15;
+    --ambient-hyperfocus: #1a101c;
+    --ambient-break: #062016;
+    --ambient-disengaged: #270c0c;
+    --ambient-bg: var(--ambient-idle);
   }
 }
 
+.dark {
+  --background: var(--rum-950);
+  --foreground: var(--rum-100);
+  --card: var(--rum-900);
+  --card-foreground: var(--rum-50);
+  --popover: var(--rum-900);
+  --popover-foreground: var(--rum-50);
+  --primary: var(--rum-400);
+  --primary-foreground: var(--rum-950);
+  --secondary: var(--rum-800);
+  --secondary-foreground: var(--rum-100);
+  --muted: var(--rum-950);
+  --muted-foreground: var(--rum-400);
+  --accent: var(--rum-800);
+  --accent-foreground: var(--rum-100);
+  --border: var(--rum-800);
+  --input: var(--rum-800);
+  --ring: var(--rum-400);
+
+  /* Ambient Focus State Variables (Dark Mode) */
+  --ambient-idle: var(--rum-950);
+  --ambient-focus: #140d15;
+  --ambient-hyperfocus: #1a101c;
+  --ambient-break: #062016;
+  --ambient-disengaged: #270c0c;
+  --ambient-bg: var(--ambient-idle);
+}
+
 html, body {
-  background: var(--background);
+  background-color: var(--ambient-bg);
   color: var(--foreground);
+  transition: background-color 0.8s ease;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

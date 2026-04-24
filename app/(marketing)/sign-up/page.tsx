@@ -24,8 +24,8 @@ export default function SignUpPage() {
 
   if (!isLoaded) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
-        <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
+      <div className="min-h-screen flex items-center justify-center bg-muted dark:bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -102,17 +102,17 @@ export default function SignUpPage() {
   };
   if (verifying) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-6">
+      <div className="min-h-screen bg-muted dark:bg-background flex flex-col items-center justify-center p-6">
         <div className="w-full max-w-[400px]">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-12 h-12 bg-indigo-600 rounded-xl mb-4 shadow-lg shadow-indigo-100 dark:shadow-none">
+            <div className="inline-flex items-center justify-center w-12 h-12 bg-primary rounded-xl mb-4 shadow-lg shadow-primary/20 dark:shadow-none">
               <ShieldCheck className="text-white w-6 h-6" />
             </div>
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Check your email</h1>
-            <p className="text-slate-500 dark:text-slate-400 mt-2">We sent a verification code to {email}</p>
+            <h1 className="text-3xl font-bold text-foreground tracking-tight">Check your email</h1>
+            <p className="text-rum-900 dark:text-rum-800 mt-2">We sent a verification code to {email}</p>
           </div>
 
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm p-8">
+          <div className="bg-background dark:bg-card border border-border rounded-2xl shadow-sm p-8">
             <form onSubmit={handleVerification} className="space-y-5">
               {error && (
                 <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 text-sm px-4 py-3 rounded-xl">
@@ -121,7 +121,7 @@ export default function SignUpPage() {
               )}
 
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">
+                <label className="text-sm font-medium text-foreground dark:text-rum-700 ml-1">
                   Verification Code
                 </label>
                 <input
@@ -130,7 +130,7 @@ export default function SignUpPage() {
                   onChange={(e) => setCode(e.target.value)}
                   required
                   placeholder="Enter 6-digit code"
-                  className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-xl px-4 py-3 text-center text-2xl font-bold tracking-[0.5em] text-slate-900 dark:text-white placeholder-slate-300 focus:ring-2 focus:ring-indigo-600 transition-all outline-none"
+                  className="w-full bg-muted border-none rounded-xl px-4 py-3 text-center text-2xl font-bold tracking-[0.5em] text-foreground placeholder-rum-500 focus:ring-2 focus:ring-primary transition-all outline-none"
                   maxLength={6}
                 />
               </div>
@@ -138,7 +138,7 @@ export default function SignUpPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-100 dark:shadow-none"
+                className="w-full h-12 bg-primary hover:bg-rum-600 disabled:opacity-50 text-primary-foreground font-semibold rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20 dark:shadow-none"
               >
                 {loading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
@@ -153,7 +153,7 @@ export default function SignUpPage() {
               <button
                 type="button"
                 onClick={() => setVerifying(false)}
-                className="w-full text-sm text-slate-500 hover:text-slate-700 font-medium pt-2"
+                className="w-full text-sm text-rum-900 hover:text-foreground font-medium pt-2"
               >
                 Change email address
               </button>
@@ -165,17 +165,16 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-6 py-12">
+    <div className="min-h-screen bg-muted dark:bg-background flex flex-col items-center justify-center p-6 py-12">
       <div className="w-full max-w-[440px]">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-indigo-600 rounded-xl mb-4 shadow-lg shadow-indigo-100 dark:shadow-none">
-            <span className="text-white font-bold text-xl">A</span>
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-primary rounded-xl mb-4 shadow-lg shadow-primary/20 dark:shadow-none"><span className="text-primary-foreground font-bold text-xl">A</span>
           </div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Create your account</h1>
-          <p className="text-slate-500 dark:text-slate-400 mt-2">Get started with Ascent productivity hub</p>
+          <h1 className="text-3xl font-bold text-foreground tracking-tight">Create your account</h1>
+          <p className="text-rum-900 dark:text-rum-800 mt-2">Get started with Ascent productivity hub</p>
         </div>
 
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm p-8">
+        <div className="bg-background dark:bg-card border border-border rounded-2xl shadow-sm p-8">
           <form onSubmit={handleSignUp} className="space-y-4">
             {error && (
               <div className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 text-sm px-4 py-3 rounded-xl">
@@ -185,69 +184,69 @@ export default function SignUpPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">
+                <label className="text-sm font-medium text-foreground dark:text-rum-700 ml-1">
                   First name
                 </label>
                 <div className="relative">
-                  <User className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
+                  <User className="absolute left-3.5 top-3 w-4 h-4 text-rum-800" />
                   <input
                     type="text"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     required
                     placeholder="John"
-                    className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-xl pl-10 pr-4 py-2.5 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-indigo-600 transition-all outline-none"
+                    className="w-full bg-muted border-none rounded-xl pl-10 pr-4 py-2.5 text-foreground placeholder-rum-600 focus:ring-2 focus:ring-primary transition-all outline-none"
                   />
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">
+                <label className="text-sm font-medium text-foreground dark:text-rum-700 ml-1">
                   Last name
                 </label>
                 <div className="relative">
-                  <User className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
+                  <User className="absolute left-3.5 top-3 w-4 h-4 text-rum-800" />
                   <input
                     type="text"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     required
                     placeholder="Doe"
-                    className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-xl pl-10 pr-4 py-2.5 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-indigo-600 transition-all outline-none"
+                    className="w-full bg-muted border-none rounded-xl pl-10 pr-4 py-2.5 text-foreground placeholder-rum-600 focus:ring-2 focus:ring-primary transition-all outline-none"
                   />
                 </div>
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">
+              <label className="text-sm font-medium text-foreground dark:text-rum-700 ml-1">
                 Email address
               </label>
               <div className="relative">
-                <Mail className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
+                <Mail className="absolute left-3.5 top-3 w-4 h-4 text-rum-800" />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   placeholder="name@company.com"
-                  className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-xl pl-10 pr-4 py-2.5 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-indigo-600 transition-all outline-none"
+                  className="w-full bg-muted border-none rounded-xl pl-10 pr-4 py-2.5 text-foreground placeholder-rum-600 focus:ring-2 focus:ring-primary transition-all outline-none"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">
+              <label className="text-sm font-medium text-foreground dark:text-rum-700 ml-1">
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3.5 top-3 w-4 h-4 text-slate-400" />
+                <Lock className="absolute left-3.5 top-3 w-4 h-4 text-rum-800" />
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   placeholder="Create a password"
-                  className="w-full bg-slate-50 dark:bg-slate-800 border-none rounded-xl pl-10 pr-4 py-2.5 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-indigo-600 transition-all outline-none"
+                  className="w-full bg-muted border-none rounded-xl pl-10 pr-4 py-2.5 text-foreground placeholder-rum-600 focus:ring-2 focus:ring-primary transition-all outline-none"
                 />
               </div>
             </div>
@@ -256,7 +255,7 @@ export default function SignUpPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-100 dark:shadow-none"
+                className="w-full h-12 bg-primary hover:bg-rum-600 disabled:opacity-50 text-primary-foreground font-semibold rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-primary/20 dark:shadow-none"
               >
                 {loading ? (
                   <Loader2 className="w-5 h-5 animate-spin" />
@@ -273,16 +272,16 @@ export default function SignUpPage() {
           <div className="mt-6 space-y-4">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-100 dark:border-slate-800"></div>
+                <div className="w-full border-t border-border"></div>
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-white dark:bg-slate-900 px-2 text-slate-400 font-bold tracking-widest leading-none">Or continue with</span>
+                <span className="bg-background dark:bg-card px-2 text-rum-800 font-bold tracking-widest leading-none">Or continue with</span>
               </div>
             </div>
 
             <button
               onClick={handleGoogleAuth}
-              className="w-full h-12 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-indigo-200 dark:hover:border-indigo-900 rounded-xl font-bold text-sm text-slate-700 dark:text-slate-200 flex items-center justify-center gap-3 transition-all"
+              className="w-full h-12 bg-background dark:bg-card border border-border hover:border-primary/30 dark:hover:border-primary/50 rounded-xl font-bold text-sm text-foreground flex items-center justify-center gap-3 transition-all"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path
@@ -306,12 +305,12 @@ export default function SignUpPage() {
             </button>
           </div>
 
-          <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800 text-center">
-            <p className="text-sm text-slate-500 dark:text-slate-400">
+          <div className="mt-8 pt-6 border-t border-border text-center">
+            <p className="text-sm text-rum-900 dark:text-rum-800">
               Already have an account?{" "}
               <Link
                 href="/sign-in"
-                className="text-indigo-600 dark:text-indigo-400 font-semibold hover:underline underline-offset-4"
+                className="text-primary dark:text-rum-800 font-semibold hover:underline underline-offset-4"
               >
                 Sign in
               </Link>
@@ -319,10 +318,25 @@ export default function SignUpPage() {
           </div>
         </div>
 
-        <p className="mt-8 text-center text-xs text-slate-400 max-w-sm mx-auto">
+        <p className="mt-8 text-center text-xs text-rum-800 max-w-sm mx-auto">
           By creating an account, you agree to our Terms of Service and Privacy Policy.
         </p>
       </div>
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { motion } from "framer-motion";
 import {
   CheckCircle2,
   Clock,
@@ -22,34 +21,20 @@ interface TaskCardProps {
   onTaskSelect?: (taskId: string) => void;
 }
 
-/**
- * Priority indicator with professional subdued tones
- */
-const PriorityIndicator: React.FC<{ priority: TaskCardProps["priority"] }> = ({
-  priority,
-}) => {
-  const configs = {
-    low: { dot: "bg-blue-400", label: "Low Priority" },
-    medium: { dot: "bg-amber-400", label: "Medium Priority" },
-    high: { dot: "bg-orange-500", label: "High Priority" },
-    urgent: { dot: "bg-rose-500", label: "Urgent" },
+const PriorityLabel: React.FC<{ priority: TaskCardProps["priority"] }> = ({ priority }) => {
+  const colors = {
+    low: "text-rum-600",
+    medium: "text-amber-600",
+    high: "text-orange-600",
+    urgent: "text-rose-600",
   };
-
-  const config = configs[priority] || configs.medium;
-
   return (
-    <div className="flex items-center gap-1.5">
-      <div className={cn("w-2 h-2 rounded-full", config.dot)} />
-      <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-        {config.label}
-      </span>
-    </div>
+    <span className={cn("text-[10px] font-bold uppercase tracking-widest", colors[priority])}>
+      {priority}
+    </span>
   );
 };
 
-/**
- * Modern Task Card Component - Professional Enterprise Design
- */
 export const TaskCard: React.FC<TaskCardProps> = ({
   id,
   title,
@@ -63,67 +48,38 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   const progress = subtaskCount > 0 ? (completedSubtasks / subtaskCount) * 100 : 0;
   const isOverdue = deadline && new Date(deadline) < new Date() && status !== "completed";
 
-  const statusConfigs = {
-    todo: { icon: AlertCircle, color: "text-slate-400", bg: "bg-slate-50 dark:bg-slate-800" },
-    in_progress: { icon: Clock, color: "text-indigo-600", bg: "bg-indigo-50 dark:bg-indigo-950/30" },
-    completed: { icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50 dark:bg-emerald-950/20" },
-  };
-
-  const config = statusConfigs[status] || statusConfigs.todo;
-  const Icon = config.icon;
-
   return (
     <div
       onClick={() => onTaskSelect?.(id)}
-      className="group bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer flex flex-col h-full"
+      className="bg-card p-6 border border-border rounded-md cursor-pointer hover:border-primary/30 transition-colors flex flex-col h-full"
     >
-      <div className="flex items-start justify-between mb-4">
-        <div className={cn("p-2 rounded-xl transition-colors", config.bg)}>
-          <Icon className={cn("w-4 h-4", config.color)} />
-        </div>
-        <PriorityIndicator priority={priority} />
+      <div className="flex justify-between items-center mb-4">
+        <PriorityLabel priority={priority} />
+        {status === 'completed' && <CheckCircle2 className="w-4 h-4 text-emerald-600" />}
       </div>
 
-      <div className="flex-1 space-y-2 mb-6">
-        <h3 className="font-bold text-slate-900 dark:text-white tracking-tight leading-snug group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+      <div className="flex-1 mb-6">
+        <h3 className="font-bold text-foreground text-sm leading-tight mb-2">
           {title}
         </h3>
-        <p className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
-          <span className="text-slate-900 dark:text-slate-200 font-bold">{completedSubtasks}</span> / {subtaskCount} Subtasks achieved
+        <p className="text-[11px] text-muted-foreground">
+          {completedSubtasks} / {subtaskCount} Tasks
         </p>
       </div>
 
       <div className="space-y-4">
-        {/* Progress bar */}
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-            <span>Progress</span>
-            <span className="text-slate-900 dark:text-white">{Math.round(progress)}%</span>
-          </div>
-          <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 overflow-hidden">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${progress}%` }}
-              className="h-full bg-indigo-600 rounded-full"
-            />
-          </div>
+        <div className="w-full bg-muted rounded-full h-1 overflow-hidden">
+          <div className="h-full bg-primary" style={{ width: `${progress}%` }} />
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-between pt-4 border-t border-slate-50 dark:border-slate-800/50">
-          <div className="flex items-center gap-2">
-            <Calendar className={cn("w-3.5 h-3.5", isOverdue ? "text-rose-500" : "text-slate-400")} />
-            <span className={cn(
-              "text-[11px] font-bold tracking-tight",
-              isOverdue ? "text-rose-600" : "text-slate-500"
-            )}>
-              {deadline ? new Date(deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No deadline'}
-            </span>
+        <div className="flex items-center justify-between text-[10px] font-bold text-muted-foreground">
+          <div className="flex items-center gap-1.5">
+             <Calendar size={12} className={isOverdue ? "text-destructive" : "text-muted-foreground"} />
+             <span className={isOverdue ? "text-destructive" : ""}>
+               {deadline ? new Date(deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No date'}
+             </span>
           </div>
-          <div className="flex items-center text-indigo-600 dark:text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity">
-            <span className="text-[10px] font-bold uppercase tracking-widest mr-1">Details</span>
-            <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-          </div>
+          <ChevronRight size={12} />
         </div>
       </div>
     </div>
@@ -131,3 +87,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 };
 
 export default TaskCard;
+
+
+
+
+
+
+
+
+
