@@ -62,6 +62,29 @@ export const FocusTimer: React.FC = () => {
     [getTaskWithSubtasks]
   );
 
+  const autoSelectNext = useCallback(async () => {
+    const updatedTasks = await fetchTasks();
+    if (!updatedTasks || updatedTasks.length === 0) {
+      setSelectedTask(null);
+      setSelectedSubtask(null);
+      return;
+    }
+
+    // Find the first incomplete task
+    const nextTask = updatedTasks.find(t => !t.completed);
+    if (nextTask) {
+      const taskWithDetails = await getTaskWithSubtasks(nextTask._id);
+      setSelectedTask(taskWithDetails);
+      
+      // Find the first incomplete subtask
+      const nextSubtask = taskWithDetails.subtasks.find(st => !st.completed);
+      setSelectedSubtask(nextSubtask || null);
+    } else {
+      setSelectedTask(null);
+      setSelectedSubtask(null);
+    }
+  }, [fetchTasks, getTaskWithSubtasks]);
+
   useEffect(() => {
     if (selectedSubtask && selectedTask) {
       const calibratedAvg = stats?.avgDurationByPriority?.[selectedTask.priority];
@@ -342,11 +365,7 @@ export const FocusTimer: React.FC = () => {
                                 onClick={async () => {
                                   const res = await completeSubtask();
                                   if (res) {
-                                    fetchTasks();
-                                    if (selectedTask) {
-                                      const updated = await getTaskWithSubtasks(selectedTask._id);
-                                      setSelectedTask(updated);
-                                    }
+                                    await autoSelectNext();
                                   }
                                 }} 
                                 className="w-full bg-background text-primary py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all hover:bg-rum-100 active:scale-95"
@@ -365,11 +384,7 @@ export const FocusTimer: React.FC = () => {
                           onClick={async () => {
                             const res = await completeSubtask();
                             if (res) {
-                              fetchTasks();
-                              if (selectedTask) {
-                                const updated = await getTaskWithSubtasks(selectedTask._id);
-                                setSelectedTask(updated);
-                              }
+                              await autoSelectNext();
                             }
                           }}
                           className="w-full h-14 rounded-2xl bg-primary/10 border border-primary/20 text-primary font-black text-[10px] uppercase tracking-[0.2em] flex items-center justify-center gap-2 shadow-sm transition-all hover:bg-primary/20 active:scale-95"

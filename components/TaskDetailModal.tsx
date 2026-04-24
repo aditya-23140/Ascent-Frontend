@@ -217,7 +217,7 @@ export default function TaskDetailModal({
                 {isEditing ? (
                   <div className="space-y-6">
                     <div className="space-y-2">
-                      <label className="text-xs font-bold text-rum-600 uppercase tracking-widest ml-1">Task Title</label>
+                      <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest ml-1">Task Title</label>
                       <input
                         type="text"
                         value={editedTitle}
@@ -227,7 +227,7 @@ export default function TaskDetailModal({
                     </div>
 
                     <div className="space-y-2">
-                      <label className="text-xs font-bold text-rum-600 uppercase tracking-widest ml-1">Scope & Description</label>
+                      <label className="text-xs font-bold text-muted-foreground uppercase tracking-widest ml-1">Scope & Description</label>
                       <textarea
                         value={editedDescription}
                         onChange={(e) => setEditedDescription(e.target.value)}
@@ -239,7 +239,7 @@ export default function TaskDetailModal({
 
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-rum-600 uppercase">Priority</label>
+                        <label className="text-xs font-bold text-muted-foreground uppercase">Priority</label>
                         <select
                           value={editedPriority}
                           onChange={(e) => setEditedPriority(e.target.value as "low" | "medium" | "high")}
@@ -253,7 +253,7 @@ export default function TaskDetailModal({
                       </div>
 
                       <div className="space-y-1.5">
-                        <label className="text-xs font-bold text-rum-600 uppercase">Deadline</label>
+                        <label className="text-xs font-bold text-muted-foreground uppercase">Deadline</label>
                         <input
                           type="datetime-local"
                           value={editedDeadline}
@@ -284,7 +284,7 @@ export default function TaskDetailModal({
                     {/* Overview Metadata */}
                     <div className="grid grid-cols-3 gap-8">
                       <div className="space-y-1.5">
-                        <p className="text-[10px] font-bold text-rum-600 uppercase tracking-widest">Priority</p>
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Priority</p>
                         <div className="flex items-center gap-2">
                           <div className={cn("w-2 h-2 rounded-full",
                             task.priority === 'low' ? 'bg-blue-400' :
@@ -294,11 +294,11 @@ export default function TaskDetailModal({
                         </div>
                       </div>
                       <div className="space-y-1.5">
-                        <p className="text-[10px] font-bold text-rum-600 uppercase tracking-widest">Status</p>
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Status</p>
                         <span className="text-sm font-bold text-foreground capitalize">{(task.status || "pending").replace('_', ' ')}</span>
                       </div>
                       <div className="space-y-1.5">
-                        <p className="text-[10px] font-bold text-rum-600 uppercase tracking-widest">Deadline</p>
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Deadline</p>
                         <div className="flex items-center gap-2 text-foreground">
                           <Calendar className="w-3.5 h-3.5 text-rum-600" />
                           <span className="text-sm font-bold">{task.deadline ? new Date(task.deadline).toLocaleDateString() : 'Unset'}</span>
@@ -307,8 +307,8 @@ export default function TaskDetailModal({
                     </div>
 
                     <div className="space-y-2">
-                      <p className="text-xs font-bold text-rum-600 uppercase">Description</p>
-                      <p className="text-rum-600 dark:text-rum-600 leading-relaxed">
+                      <p className="text-xs font-bold text-muted-foreground uppercase">Description</p>
+                      <p className="text-foreground leading-relaxed">
                         {task.description || "No context provided for this task."}
                       </p>
                     </div>
@@ -316,7 +316,7 @@ export default function TaskDetailModal({
                     {/* Subtasks Management */}
                     <div className="space-y-5">
                       <div className="flex items-center justify-between border-b border-border pb-2">
-                        <h4 className="text-xs font-bold text-rum-600 uppercase">Steps ({subtasks.length})</h4>
+                        <h4 className="text-xs font-bold text-muted-foreground uppercase">Steps ({subtasks.length})</h4>
                         {!isAddingSubtask && (
                           <button
                             onClick={() => setIsAddingSubtask(true)}

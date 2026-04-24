@@ -293,8 +293,8 @@ function CreateTaskModal({
             <div className="bg-card dark:bg-slate-950 border border-border dark:border-border rounded-lg shadow-xl max-w-xl w-full max-h-[90vh] overflow-hidden flex flex-col pointer-events-auto">
               {/* Header */}
               <div className="flex items-center justify-between px-6 py-5 border-b border-border dark:border-card">
-                <h2 className="text-base font-bold">New Task</h2>
-                <button onClick={onClose} className="p-1.5 text-rum-600 hover:text-rum-600 rounded transition-colors">
+                <h2 className="text-base font-bold text-foreground">New Task</h2>
+                <button onClick={onClose} className="p-1.5 text-muted-foreground hover:text-foreground rounded transition-colors">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -302,7 +302,7 @@ function CreateTaskModal({
               {/* Body */}
               <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-rum-600 uppercase">Title</label>
+                  <label className="text-xs font-bold text-muted-foreground uppercase">Title</label>
                   <input
                     type="text"
                     value={title}
@@ -313,7 +313,7 @@ function CreateTaskModal({
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-rum-600 uppercase">Description</label>
+                  <label className="text-xs font-bold text-muted-foreground uppercase">Description</label>
                   <textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
@@ -324,7 +324,7 @@ function CreateTaskModal({
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-rum-600 uppercase">Priority</label>
+                    <label className="text-xs font-bold text-muted-foreground uppercase">Priority</label>
                     <select
                       value={priority}
                       onChange={(e) => setPriority(e.target.value)}
@@ -337,7 +337,7 @@ function CreateTaskModal({
                     </select>
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-rum-600 uppercase">Deadline</label>
+                    <label className="text-xs font-bold text-muted-foreground uppercase">Deadline</label>
                     <input
                       type="datetime-local"
                       value={deadline}
@@ -364,7 +364,7 @@ function CreateTaskModal({
 
                 {generatedSubtasks.length > 0 && (
                   <div className="space-y-2">
-                    <p className="text-xs font-bold text-rum-600 uppercase">Suggested steps</p>
+                    <p className="text-xs font-bold text-muted-foreground uppercase">Suggested steps</p>
                     {generatedSubtasks.map((st, i) => (
                       <label
                         key={st.id || `gen-st-${i}`}
@@ -388,7 +388,7 @@ function CreateTaskModal({
               <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-border dark:border-card">
                 <button
                   onClick={onClose}
-                  className="h-10 px-4 text-sm font-bold text-rum-600 hover:text-rum-700 transition-colors"
+                  className="h-10 px-4 text-sm font-bold text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Cancel
                 </button>

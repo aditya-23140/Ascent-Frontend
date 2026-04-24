@@ -68,10 +68,12 @@ export function useTasks() {
         data: { tasks: ITask[] };
       }>(API_ENDPOINTS.TASKS);
       setTasks(response.data.data.tasks);
+      return response.data.data.tasks;
     } catch (err) {
       const message = handleApiError(err);
       setError(message);
       console.error("Error fetching tasks:", message);
+      return [];
     } finally {
       setLoading(false);
     }

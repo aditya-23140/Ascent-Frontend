@@ -94,7 +94,7 @@ export const ParentDashboard: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-border pb-8">
         <div>
           <h1 className="text-4xl font-black tracking-tight mb-2">Command Center</h1>
-          <p className="text-rum-600 font-medium">Monitoring growth and managing rewards.</p>
+          <p className="text-muted-foreground font-medium">Monitoring growth and managing rewards.</p>
         </div>
         <div className="flex gap-3">
            <button 
@@ -111,7 +111,7 @@ export const ParentDashboard: React.FC = () => {
         {/* Child Progress */}
         <div className="lg:col-span-8 space-y-8">
            <div className="flex items-center justify-between">
-              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-rum-600">Linked Accounts</h3>
+              <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Linked Accounts</h3>
               <span className="px-2 py-1 bg-muted rounded text-[10px] font-bold">{students.length} Total</span>
            </div>
            
@@ -263,9 +263,9 @@ export const ParentDashboard: React.FC = () => {
                         placeholder="e.g. 1hr Gaming Time"
                       />
                    </div>
-                   <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
-                         <label className="text-[10px] font-black text-rum-600 uppercase tracking-widest">Token Cost</label>
+                         <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Token Cost</label>
                          <input 
                            type="number" 
                            value={newReward.tokenCost}
@@ -274,7 +274,7 @@ export const ParentDashboard: React.FC = () => {
                          />
                       </div>
                       <div className="space-y-2">
-                         <label className="text-[10px] font-black text-rum-600 uppercase tracking-widest">Category</label>
+                         <label className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Category</label>
                          <select 
                            value={newReward.category}
                            onChange={e => setNewReward(r => ({ ...r, category: e.target.value as any }))}
