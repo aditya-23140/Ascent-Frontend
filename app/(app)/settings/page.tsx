@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/components/ThemeProvider";
+import { DeviceSettings } from "@/components/DeviceSettings";
 
 export default function SettingsPage() {
   const { profile, loading, updateUserProfile } = useUserStats();
@@ -272,6 +273,9 @@ export default function SettingsPage() {
              </div>
           </div>
         </div>
+
+        {/* Hardware Devices */}
+        <DeviceSettings />
 
         {/* Session */}
         <div className="space-y-6">

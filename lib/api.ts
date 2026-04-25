@@ -48,6 +48,9 @@ export const API_ENDPOINTS = {
   // User
   USER_PROFILE: "/api/user/profile",
   USER_STATS: "/api/user/stats",
+  DEVICES: "/api/user/devices",
+  REGISTER_DEVICE: "/api/user/device",
+  REVOKE_DEVICE: (id: string) => `/api/user/device/${id}`,
 
   // Rewards/Points
   REWARDS: "/api/rewards",
