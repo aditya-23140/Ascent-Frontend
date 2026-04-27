@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@clerk/nextjs";
-import { createAuthenticatedApiClient, API_ENDPOINTS } from "@/lib/api";
-import { Cpu, Plus, Trash2, Key, Copy, Check, Loader2, AlertCircle } from "lucide-react";
+import { createAuthenticatedApiClient } from "@/lib/api";
+import { Cpu, Plus, Trash2, Loader2, AlertCircle, Link, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface Device {
@@ -16,9 +16,13 @@ export function DeviceSettings() {
   const { getToken } = useAuth();
   const [devices, setDevices] = useState<Device[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [newToken, setNewToken] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  
+  // Pairing Flow State
+  const [isPairingMode, setIsPairingMode] = useState(false);
+  const [pairingCode, setPairingCode] = useState("");
+  const [isPairing, setIsPairing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const fetchDevices = async () => {
     try {
@@ -37,19 +41,35 @@ export function DeviceSettings() {
     fetchDevices();
   }, [getToken]);
 
-  const handleGenerate = async () => {
-    setIsGenerating(true);
-    setNewToken(null);
+  const handlePairSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pairingCode || pairingCode.length !== 6) {
+      setError("Please enter a valid 6-digit code.");
+      return;
+    }
+    
+    setIsPairing(true);
+    setError(null);
+    setSuccessMsg(null);
+    
     try {
       const token = await getToken();
       const client = await createAuthenticatedApiClient(token || "");
-      const res = await client.post("/api/user/device", { name: "FocusOS Hub" });
-      setNewToken(res.data.data.token);
-      fetchDevices();
-    } catch (err) {
-      console.error("Failed to generate token:", err);
+      const res = await client.post("/api/user/device/pair", { code: pairingCode });
+      
+      if (res.data.success) {
+        setSuccessMsg(res.data.message || "Device successfully paired!");
+        setIsPairingMode(false);
+        setPairingCode("");
+        fetchDevices();
+      } else {
+        setError(res.data.error || "Pairing failed. Try again.");
+      }
+    } catch (err: any) {
+      console.error("Failed to pair device:", err);
+      setError(err.response?.data?.error || "Failed to pair device. Ensure the code is correct and the device is connected to WiFi.");
     } finally {
-      setIsGenerating(false);
+      setIsPairing(false);
     }
   };
 
@@ -65,14 +85,6 @@ export function DeviceSettings() {
     }
   };
 
-  const copyToClipboard = () => {
-    if (newToken) {
-      navigator.clipboard.writeText(newToken);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
   return (
     <div className="space-y-6">
       <h3 className="text-sm font-bold uppercase tracking-wider text-rum-600">Hardware Devices</h3>
@@ -82,34 +94,69 @@ export function DeviceSettings() {
             <p className="font-bold text-sm">Active Hardware</p>
             <p className="text-xs text-rum-600">Manage your ESP32 Focus Hubs and other hardware.</p>
           </div>
-          <button
-            onClick={handleGenerate}
-            disabled={isGenerating}
-            className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-[10px] font-bold uppercase tracking-wider transition-all disabled:opacity-50"
-          >
-            {isGenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-            Register Device
-          </button>
+          {!isPairingMode && (
+            <button
+              onClick={() => {
+                setIsPairingMode(true);
+                setError(null);
+                setSuccessMsg(null);
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-[10px] font-bold uppercase tracking-wider transition-all hover:bg-primary/90"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Pair New Device
+            </button>
+          )}
         </div>
 
-        {newToken && (
-          <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 p-4 rounded-md space-y-3">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm font-bold text-amber-900 dark:text-amber-200">Copy your new device token</p>
-                <p className="text-xs text-amber-800 dark:text-amber-300">This token will only be shown ONCE. Enter it into your FocusOS device settings.</p>
-              </div>
+        {isPairingMode && (
+          <form onSubmit={handlePairSubmit} className="bg-rum-50 dark:bg-rum-950/30 border border-rum-200 dark:border-rum-900/50 p-6 rounded-md space-y-4">
+            <div>
+              <label className="block text-sm font-bold mb-1">Enter Pairing Code</label>
+              <p className="text-xs text-rum-600 mb-3">Find the 6-digit code on your FocusOS device screen.</p>
+              <input
+                type="text"
+                maxLength={6}
+                value={pairingCode}
+                onChange={(e) => setPairingCode(e.target.value.replace(/\D/g, ''))}
+                placeholder="123456"
+                className="w-full bg-background border border-border rounded p-2 text-xl font-mono tracking-widest text-center focus:ring-2 focus:ring-primary outline-none"
+                disabled={isPairing}
+              />
             </div>
-            <div className="flex items-center gap-2 bg-background p-2 rounded border border-amber-200 dark:border-amber-800">
-              <code className="flex-1 text-xs font-mono break-all px-2">{newToken}</code>
-              <button 
-                onClick={copyToClipboard}
-                className="p-2 hover:bg-rum-100 dark:hover:bg-rum-900 rounded-md transition-colors"
+            
+            {error && (
+              <div className="flex items-start gap-2 text-red-600 bg-red-50 dark:bg-red-950/30 p-3 rounded text-xs border border-red-200 dark:border-red-900/50">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <p>{error}</p>
+              </div>
+            )}
+            
+            <div className="flex justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setIsPairingMode(false)}
+                className="px-4 py-2 text-xs font-bold text-rum-600 hover:text-foreground transition-colors"
+                disabled={isPairing}
               >
-                {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4 text-rum-600" />}
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isPairing || pairingCode.length !== 6}
+                className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md text-xs font-bold transition-all disabled:opacity-50"
+              >
+                {isPairing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Link className="w-4 h-4" />}
+                Link Device
               </button>
             </div>
+          </form>
+        )}
+
+        {successMsg && (
+          <div className="bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/50 p-4 rounded-md flex items-start gap-3">
+            <Check className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+            <p className="text-sm font-bold text-emerald-900 dark:text-emerald-200">{successMsg}</p>
           </div>
         )}
 
@@ -133,12 +180,13 @@ export function DeviceSettings() {
                 <button
                   onClick={() => handleRevoke(device.id)}
                   className="p-2 text-rum-400 hover:text-destructive transition-colors"
+                  title="Revoke access"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
             ))
-          ) : !newToken && (
+          ) : !isPairingMode && (
             <div className="text-center py-10 border-2 border-dashed border-border rounded-md">
               <Cpu className="w-8 h-8 text-rum-200 mx-auto mb-3" />
               <p className="text-xs text-rum-600">No hardware devices registered yet.</p>
