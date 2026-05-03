@@ -113,7 +113,11 @@ export function DeviceSettings() {
           <form onSubmit={handlePairSubmit} className="bg-rum-50 dark:bg-rum-950/30 border border-rum-200 dark:border-rum-900/50 p-6 rounded-md space-y-4">
             <div>
               <label className="block text-sm font-bold mb-1">Enter Pairing Code</label>
-              <p className="text-xs text-rum-600 mb-3">Find the 6-digit code on your FocusOS device screen.</p>
+              <div className="text-xs text-rum-600 mb-3 space-y-1">
+                <p>1. On your device, go to <b>WiFi & Identity</b>.</p>
+                <p>2. Tap <b>Start Pairing</b> to generate a code.</p>
+                <p>3. Enter the 6-digit code below (valid for 5 mins).</p>
+              </div>
               <input
                 type="text"
                 maxLength={6}
