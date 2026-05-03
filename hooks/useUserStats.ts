@@ -5,6 +5,7 @@ import {
   API_ENDPOINTS,
   handleApiError,
 } from "@/lib/api";
+import { useSocket } from "@/components/SocketProvider";
 
 /**
  * User stats interface
@@ -57,6 +58,7 @@ export interface IUserProfile {
  */
 export function useUserStats() {
   const { getToken } = useAuth();
+  const { socket } = useSocket();
   const [stats, setStats] = useState<IUserStats | null>(null);
   const [profile, setProfile] = useState<IUserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -155,6 +157,38 @@ export function useUserStats() {
   useEffect(() => {
     fetchUserData();
   }, [fetchUserData]);
+
+  // Live-refresh stats from WS dashboard_update pushes
+  useEffect(() => {
+    if (!socket) return;
+    const handler = (event: MessageEvent) => {
+      try {
+        const msg = JSON.parse(event.data);
+        if (msg.type === 'dashboard_update') {
+          const s = msg.payload?.stats;
+          if (s) {
+            console.log("useUserStats: Received live dashboard update, syncing stats.");
+            setStats(prev => prev ? {
+              ...prev,
+              pointsEarned: s.pointsEarned ?? prev.pointsEarned,
+              spoonState: {
+                ...prev.spoonState,
+                remainingSpoons: s.spoonState?.remaining ?? prev.spoonState.remainingSpoons,
+                spoonsUsed: (s.spoonState?.total - s.spoonState?.remaining) ?? prev.spoonState.spoonsUsed,
+                effortMultiplier: s.spoonState?.effortMultiplier ?? prev.spoonState.effortMultiplier,
+              },
+              currentStreak: s.currentStreak ?? prev.currentStreak,
+              level: s.level ?? prev.level,
+            } : prev);
+          }
+        }
+      } catch (err) {
+        console.error("useUserStats: Failed to process WS message", err);
+      }
+    };
+    socket.addEventListener('message', handler);
+    return () => socket.removeEventListener('message', handler);
+  }, [socket]);
 
   return {
     stats,

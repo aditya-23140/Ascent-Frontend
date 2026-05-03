@@ -49,6 +49,8 @@ export const useFocusTimer = () => {
             secondsElapsed: serverElapsed,
             plannedSeconds: serverPlanned,
             taskId: serverTaskId,
+            subtaskId: serverSubtaskId,
+            subtaskTitle: serverSubtaskTitle,
             isRunning: serverRunning
           } = data.payload;
           
@@ -58,6 +60,16 @@ export const useFocusTimer = () => {
           setPlannedSeconds(serverPlanned);
           setTaskId(serverTaskId || null);
           setIsRunning(serverRunning);
+
+          // Hydrate subtask from remote timer_update (e.g. device started session)
+          if (serverSubtaskId && serverSubtaskTitle) {
+            setCurrentSubtask({ 
+              _id: serverSubtaskId, 
+              title: serverSubtaskTitle, 
+              duration: Math.round(serverPlanned / 60), 
+              completed: false 
+            });
+          }
         }
       } catch (error) {
         console.error("useFocusTimer: Failed to parse message:", error);
@@ -130,8 +142,10 @@ export const useFocusTimer = () => {
   const startTimer = useCallback(async () => {
     if (!currentSubtask || !taskId) return;
     await timerAction('start', {
-      duration: currentSubtask.duration,
-      taskId
+      duration: Math.round(plannedSeconds / 60),
+      taskId,
+      subtaskId: currentSubtask._id,
+      subtaskTitle: currentSubtask.title
     });
   }, [currentSubtask, taskId, timerAction]);
 
