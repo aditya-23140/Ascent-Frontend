@@ -173,8 +173,8 @@ export function useUserStats() {
               pointsEarned: s.pointsEarned ?? prev.pointsEarned,
               spoonState: {
                 ...prev.spoonState,
-                remainingSpoons: s.spoonState?.remaining ?? prev.spoonState.remainingSpoons,
-                spoonsUsed: (s.spoonState?.total - s.spoonState?.remaining) ?? prev.spoonState.spoonsUsed,
+                remainingSpoons: s.spoonState?.remainingSpoons ?? prev.spoonState.remainingSpoons,
+                spoonsUsed: s.spoonState?.spoonsUsed ?? prev.spoonState.spoonsUsed,
                 effortMultiplier: s.spoonState?.effortMultiplier ?? prev.spoonState.effortMultiplier,
               },
               currentStreak: s.currentStreak ?? prev.currentStreak,
