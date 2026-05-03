@@ -5,6 +5,7 @@ import {
   MobileMenuButton,
   MobileBottomNav,
 } from "@/components/Navigation";
+import { OnboardingGuard } from "@/components/OnboardingGuard";
 
 export default function AppLayout({
   children,
@@ -12,7 +13,7 @@ export default function AppLayout({
   children: React.ReactNode;
 }) {
   return (
-    <>
+    <OnboardingGuard>
       {/* Desktop Sidebar */}
       <SidebarNav />
 
@@ -25,14 +26,6 @@ export default function AppLayout({
 
       {/* Mobile Bottom Navigation */}
       <MobileBottomNav />
-    </>
+    </OnboardingGuard>
   );
 }
-
-
-
-
-
-
-
-

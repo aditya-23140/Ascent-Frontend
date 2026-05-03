@@ -11,7 +11,8 @@ import {
   Clock,
   Plus,
   Play,
-  ArrowRight
+  ArrowRight,
+  ShieldCheck
 } from "lucide-react";
 import { TaskCard } from "@/components/TaskCard";
 
@@ -47,9 +48,12 @@ function DashboardStatCard({
   );
 }
 
+import { useStudent } from "@/hooks/useStudent";
+
 export default function DashboardPage() {
   const { stats, profile, error } = useUserStats();
   const { tasks } = useTasks();
+  const { requests, acceptRequest } = useStudent();
 
   if (error) {
     return (
@@ -67,6 +71,30 @@ export default function DashboardPage() {
 
   return (
     <div className="p-6 md:p-10 space-y-12">
+      {/* Guardian Requests Notification */}
+      {requests.length > 0 && (
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-primary/10 border border-primary/20 p-4 rounded-xl flex flex-col md:flex-row items-center justify-between gap-4"
+        >
+          <div className="flex items-center gap-3 text-sm">
+            <div className="bg-primary p-2 rounded-lg text-white">
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+            <div>
+              <span className="font-bold">{requests[0].parent.name}</span> ({requests[0].parent.email}) wants to add you as a dependent.
+            </div>
+          </div>
+          <button 
+            className="h-8 px-3 text-xs font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+            onClick={() => acceptRequest(requests[0].id)}
+          >
+            Accept Request
+          </button>
+        </motion.div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>

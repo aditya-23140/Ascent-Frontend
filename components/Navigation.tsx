@@ -3,30 +3,52 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
+import { 
+  LayoutDashboard, 
+  CheckSquare, 
+  Clock, 
+  Settings, 
+  ShoppingBag, 
+  Shield, 
+  Store,
   Menu,
-  X,
-  LayoutDashboard,
-  CheckSquare,
-  Clock,
-  Settings,
-  Gift,
-  Users
+  X
 } from "lucide-react";
 import { UserButton } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import { useUserStats } from "@/hooks/useUserStats";
 
-const NAV_ITEMS = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Tasks", href: "/tasks", icon: CheckSquare },
-  { label: "Focus", href: "/focus", icon: Clock },
-  { label: "Settings", href: "/settings", icon: Settings },
-];
-
 export function SidebarNav() {
   const pathname = usePathname();
   const { profile } = useUserStats();
+
+  const getNavItems = () => {
+    const role = profile?.role || "standard";
+    
+    if (role === "parent") {
+      return [
+        { label: "Dashboard", href: "/guardian", icon: LayoutDashboard },
+        { label: "Store Setup", href: "/guardian/store", icon: Store },
+        { label: "Manage Family", href: "/guardian/settings", icon: Shield },
+        { label: "Settings", href: "/settings", icon: Settings },
+      ];
+    }
+
+    const items = [
+      { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+      { label: "Tasks", href: "/tasks", icon: CheckSquare },
+      { label: "Focus", href: "/focus", icon: Clock },
+    ];
+
+    if (role === "student") {
+      items.push({ label: "Reward Store", href: "/store", icon: ShoppingBag });
+    }
+
+    items.push({ label: "Settings", href: "/settings", icon: Settings });
+    return items;
+  };
+
+  const navItems = getNavItems();
 
   return (
     <aside className="hidden lg:fixed lg:inset-y-0 lg:left-0 lg:flex lg:w-64 lg:flex-col bg-background border-r border-border">
@@ -38,7 +60,7 @@ export function SidebarNav() {
       </div>
 
       <nav className="flex-1 px-4 space-y-1">
-        {NAV_ITEMS.map((item) => {
+        {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
           return (
@@ -72,10 +94,34 @@ export function SidebarNav() {
 
 export function MobileBottomNav() {
   const pathname = usePathname();
+  const { profile } = useUserStats();
+  
+  const getNavItems = () => {
+    const role = profile?.role || "standard";
+    if (role === "parent") {
+      return [
+        { label: "Dashboard", href: "/guardian", icon: LayoutDashboard },
+        { label: "Store", href: "/guardian/store", icon: Store },
+        { label: "Family", href: "/guardian/settings", icon: Shield },
+        { label: "Settings", href: "/settings", icon: Settings },
+      ];
+    }
+    const items = [
+      { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+      { label: "Tasks", href: "/tasks", icon: CheckSquare },
+      { label: "Focus", href: "/focus", icon: Clock },
+    ];
+    if (role === "student") items.push({ label: "Store", href: "/store", icon: ShoppingBag });
+    items.push({ label: "Settings", href: "/settings", icon: Settings });
+    return items;
+  };
+
+  const navItems = getNavItems();
+
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-background border-t border-border z-40">
       <div className="flex items-center justify-around px-2 py-3">
-        {NAV_ITEMS.map((item) => {
+        {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname === item.href;
           return (
@@ -96,6 +142,30 @@ export function MobileBottomNav() {
 export function MobileMenuButton() {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
+  const { profile } = useUserStats();
+
+  const getNavItems = () => {
+    const role = profile?.role || "standard";
+    if (role === "parent") {
+      return [
+        { label: "Dashboard", href: "/guardian", icon: LayoutDashboard },
+        { label: "Store Setup", href: "/guardian/store", icon: Store },
+        { label: "Manage Family", href: "/guardian/settings", icon: Shield },
+        { label: "Settings", href: "/settings", icon: Settings },
+      ];
+    }
+    const items = [
+      { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+      { label: "Tasks", href: "/tasks", icon: CheckSquare },
+      { label: "Focus", href: "/focus", icon: Clock },
+    ];
+    if (role === "student") items.push({ label: "Reward Store", href: "/store", icon: ShoppingBag });
+    items.push({ label: "Settings", href: "/settings", icon: Settings });
+    return items;
+  };
+
+  const navItems = getNavItems();
+
   return (
     <>
       <button onClick={() => setIsOpen(!isOpen)} className="lg:hidden fixed top-4 right-4 z-50 p-2 bg-card border border-border rounded shadow-premium">
@@ -105,7 +175,7 @@ export function MobileMenuButton() {
         <div className="lg:hidden fixed inset-0 bg-background z-40 p-10 flex flex-col gap-6">
           <div className="text-xl font-black text-primary">Ascent</div>
           <nav className="flex flex-col gap-4">
-            {NAV_ITEMS.map(item => (
+            {navItems.map(item => (
               <Link key={item.href} href={item.href} onClick={() => setIsOpen(false)} className="text-lg font-bold text-foreground hover:text-primary transition-colors">
                 {item.label}
               </Link>

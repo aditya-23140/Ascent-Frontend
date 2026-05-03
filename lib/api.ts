@@ -72,7 +72,10 @@ export interface ApiResponse<T> {
 export function handleApiError(error: unknown): string {
   if (error instanceof AxiosError) {
     return (
-      error.response?.data?.message || error.message || "An error occurred"
+      error.response?.data?.error || 
+      error.response?.data?.message || 
+      error.message || 
+      "An error occurred"
     );
   }
   return String(error);

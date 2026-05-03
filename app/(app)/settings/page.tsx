@@ -187,41 +187,43 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Role & Budget */}
-        <div className="space-y-6">
-          <h3 className="text-sm font-bold uppercase tracking-wider text-rum-600">System</h3>
-          <div className="bg-background p-8 rounded-lg border border-border space-y-8">
+        {/* Role & Budget - Hidden for Guardians */}
+        {profile?.role !== "parent" && (
+          <div className="space-y-6">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-rum-600">System</h3>
+            <div className="bg-background p-8 rounded-lg border border-border space-y-8">
 
-             <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-bold text-sm">Daily Energy (Spoons)</p>
-                  <p className="text-xs text-rum-600">Max energy units per day.</p>
-                </div>
-                <input 
-                  type="number" 
-                  value={settings.dailySpoonBudget}
-                  onChange={(e) => setSettings({...settings, dailySpoonBudget: parseInt(e.target.value) || 12})}
-                  className="w-20 h-10 px-3 bg-background border border-border rounded-md text-sm font-bold outline-none"
-                />
-             </div>
-
-             <div className="flex items-center justify-between pt-8 border-t border-border">
-                <div>
-                  <p className="font-bold text-sm">HyperFocus Cap</p>
-                  <p className="text-xs text-rum-600">Max overflow minutes before break.</p>
-                </div>
-                <div className="flex items-center gap-3">
+              <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-bold text-sm">Daily Energy (Spoons)</p>
+                    <p className="text-xs text-rum-600">Max energy units per day.</p>
+                  </div>
                   <input 
                     type="number" 
-                    value={settings.hyperFocusDuration}
-                    onChange={(e) => setSettings({...settings, hyperFocusDuration: parseInt(e.target.value) || 45})}
+                    value={settings.dailySpoonBudget}
+                    onChange={(e) => setSettings({...settings, dailySpoonBudget: parseInt(e.target.value) || 12})}
                     className="w-20 h-10 px-3 bg-background border border-border rounded-md text-sm font-bold outline-none"
                   />
-                  <span className="text-xs font-bold text-rum-600">MIN</span>
-                </div>
-             </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-8 border-t border-border">
+                  <div>
+                    <p className="font-bold text-sm">HyperFocus Cap</p>
+                    <p className="text-xs text-rum-600">Max overflow minutes before break.</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <input 
+                      type="number" 
+                      value={settings.hyperFocusDuration}
+                      onChange={(e) => setSettings({...settings, hyperFocusDuration: parseInt(e.target.value) || 45})}
+                      className="w-20 h-10 px-3 bg-background border border-border rounded-md text-sm font-bold outline-none"
+                    />
+                    <span className="text-xs font-bold text-rum-600">MIN</span>
+                  </div>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Workspace */}
         <div className="space-y-6">
@@ -274,8 +276,8 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Hardware Devices */}
-        <DeviceSettings />
+        {/* Hardware Devices - Hidden for Guardians */}
+        {profile?.role !== "parent" && <DeviceSettings />}
 
         {/* Session */}
         <div className="space-y-6">
