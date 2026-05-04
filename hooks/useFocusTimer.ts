@@ -63,11 +63,14 @@ export const useFocusTimer = () => {
 
           // Hydrate subtask from remote timer_update (e.g. device started session)
           if (serverSubtaskId && serverSubtaskTitle) {
-            setCurrentSubtask({ 
-              _id: serverSubtaskId, 
-              title: serverSubtaskTitle, 
-              duration: Math.round(serverPlanned / 60), 
-              completed: false 
+            setCurrentSubtask(prev => {
+              if (prev?._id === serverSubtaskId) return prev;
+              return { 
+                _id: serverSubtaskId, 
+                title: serverSubtaskTitle, 
+                duration: Math.round(serverPlanned / 60), 
+                completed: false 
+              };
             });
           }
         }

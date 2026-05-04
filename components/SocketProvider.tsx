@@ -33,6 +33,9 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return;
     }
 
+    let reconnectTimer: NodeJS.Timeout;
+    let reconnectAttempts = 0;
+
     const initSocket = async () => {
       try {
         const token = await getToken();
@@ -45,11 +48,19 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         const onOpen = () => {
           console.log("SocketProvider: WebSocket connected.");
           setIsConnected(true);
+          reconnectAttempts = 0;
         };
 
         const onClose = () => {
           console.log("SocketProvider: WebSocket disconnected.");
           setIsConnected(false);
+          // Auto-reconnect with backoff
+          const backoff = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
+          reconnectAttempts++;
+          console.log(`SocketProvider: Attempting to reconnect in ${backoff}ms (Attempt ${reconnectAttempts})`);
+          reconnectTimer = setTimeout(() => {
+            initSocket();
+          }, backoff);
         };
 
         const onError = (e: Event) => {
@@ -76,10 +87,12 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
     };
 
-    const cleanup = initSocket();
+    let cleanupFn: (() => void) | undefined;
+    initSocket().then((fn) => { cleanupFn = fn; });
 
     return () => {
-      cleanup.then((cleanupFn) => cleanupFn?.());
+      clearTimeout(reconnectTimer);
+      if (cleanupFn) cleanupFn();
     };
   }, [isSignedIn, getToken]);
 
