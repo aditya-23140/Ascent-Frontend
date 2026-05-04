@@ -7,7 +7,7 @@ import { useSocket } from "@/components/SocketProvider";
 /**
  * Timer state types
  */
-export type TimerState = "IDLE" | "FOCUS" | "HYPERFOCUS" | "BREAK" | "DISENGAGED" | "COMPLETED";
+export type TimerState = "IDLE" | "FOCUS" | "HYPERFOCUS" | "BREAK" | "COMPLETED";
 
 /**
  * Interface for subtask data

@@ -13,7 +13,6 @@ import {
   Coffee,
   Zap,
   Target,
-  AlertCircle,
   Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -125,13 +124,6 @@ export const FocusTimer: React.FC = () => {
         border: "border-emerald-200 dark:border-emerald-800", 
         ambient: "var(--ambient-break)",
         label: "Resting" 
-      },
-      DISENGAGED: { 
-        bg: "bg-rose-50 dark:bg-rose-950/20", 
-        text: "text-rose-700 dark:text-rose-400", 
-        border: "border-rose-200 dark:border-rose-800", 
-        ambient: "var(--ambient-disengaged)",
-        label: "Momentum Loss" 
       },
       IDLE: { 
         bg: "bg-card", 
@@ -282,13 +274,11 @@ export const FocusTimer: React.FC = () => {
                     <div className={cn("text-6xl font-black tracking-tighter tabular-nums", stateConfigs.text)}>
                        {timerState === 'HYPERFOCUS' 
                          ? formatTime(secondsElapsed - plannedSeconds) 
-                         : timerState === 'DISENGAGED'
-                           ? formatTime(secondsElapsed)
-                           : formatTime(remainingTime)
+                         : formatTime(remainingTime)
                        }
                     </div>
                     <div className="text-[10px] font-black text-rum-600 uppercase tracking-[0.2em]">
-                       {timerState === 'HYPERFOCUS' ? 'HyperFocus Active' : timerState === 'DISENGAGED' ? 'Momentum Loss' : 'Remaining Velocity'}
+                       {timerState === 'HYPERFOCUS' ? 'HyperFocus Active' : !isRunning && timerState !== 'IDLE' && timerState !== 'COMPLETED' ? 'Paused' : 'Remaining Velocity'}
                     </div>
                  </div>
               </div>
@@ -392,18 +382,6 @@ export const FocusTimer: React.FC = () => {
                            <CheckCircle2 size={16} /> Complete Target
                         </button>
                    </div>
-                 )}
-
-                 {timerState === 'DISENGAGED' && (
-                   <motion.div 
-                     initial={{ scale: 0.9, opacity: 0 }}
-                     animate={{ scale: 1, opacity: 1 }}
-                     className="p-4 bg-rose-50 dark:bg-rose-950/30 rounded-xl border border-rose-200 dark:border-rose-900 flex flex-col items-center gap-3"
-                   >
-                      <AlertCircle className="w-6 h-6 text-rose-500" />
-                      <p className="text-xs font-bold text-rose-700 dark:text-rose-400">Momentum is fading. Ready to refocus?</p>
-                      <button onClick={startTimer} className="px-6 py-2 bg-rose-600 text-white rounded-lg text-xs font-bold uppercase tracking-widest shadow-md">Refocus Now</button>
-                   </motion.div>
                  )}
               </div>
            </div>

@@ -80,7 +80,6 @@ export const FocusTimerAdvanced: React.FC<FocusTimerAdvancedProps> = ({
       HYPERFOCUS: { gradient: "bg-orange-500", color: "text-orange-600", bg: "bg-orange-50", icon: AlertCircle, label: "Deep Work" },
       BREAK: { gradient: "bg-emerald-500", color: "text-emerald-600", bg: "bg-emerald-50", icon: Coffee, label: "Break" },
       IDLE: { gradient: "bg-rum-400", color: "text-rum-600", bg: "bg-muted/50", icon: Clock, label: "Ready" },
-      DISENGAGED: { gradient: "bg-rose-500", color: "text-rose-600", bg: "bg-rose-50", icon: AlertCircle, label: "Refocusing" },
       COMPLETED: { gradient: "bg-emerald-600", color: "text-emerald-600", bg: "bg-emerald-50", icon: CheckCircle2, label: "Done" },
     };
     return configs[timerState] || configs.IDLE;
