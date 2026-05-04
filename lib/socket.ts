@@ -6,6 +6,12 @@ export const getSocket = (token?: string): WebSocket => {
     return socket;
   }
 
+  // Clean up any dead/closing socket before creating a new one
+  if (socket) {
+    try { socket.close(); } catch (_) { /* ignore */ }
+    socket = null;
+  }
+
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
   // Convert http(s) to ws(s)
   const wsUrl = apiUrl.replace(/^http/, 'ws') + `?token=${token}`;
